@@ -29,7 +29,6 @@ def calculate_official_last_working_day(notice_accepted_date, notice_period_str)
         official_last_working_day = notice_accepted_date + timedelta(days=period_value)
     elif period_type.lower() in ["month", "months"]:
         official_last_working_day = notice_accepted_date + relativedelta(months=period_value)
-        official_last_working_day -= timedelta(days=1)  # Adjust to the day before in the following month
     else:
         raise ValueError("Invalid notice period format. Use 'days' or 'months'.")
 
@@ -108,7 +107,10 @@ if st.button("Calculate"):
         if unserved_notice_days_remaining > 0:
             final_employment_date = last_physical_working_day
             last_payroll_date = last_physical_working_day
-            unserved_notice_info = f"{unserved_notice_days_remaining} days, to be recovered from the final wages."
+            unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
+            if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
+                unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
+            unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
         else:
             remaining_leave_days = unused_leave_days - unserved_notice_days_covered_by_leave
             leave_used_to_extend = remaining_leave_days
@@ -150,7 +152,7 @@ Leave and Payroll Details:
 - Number of Leave to be cleared during notice period: {leave_used_to_extend}
 - Final Employment Date (Adjusted Last Working Day): {last_physical_working_day.strftime('%d/%m/%Y')}
 - Last Payroll Date (Salary paid up to): {last_physical_working_day.strftime('%d/%m/%Y')}
-- Unserved Notice Period (Days): {"0.00, the short notice is covered by the leave balance" if unserved_notice_days_remaining == 0 else f"{unserved_notice_days_remaining}, to be recovered from the final wages"}
+- Unserved Notice Period (Days): {"0.00, the short notice is covered by the leave balance" if unserved_notice_days_remaining == 0 else f"{unserved_notice_info}"}
 
 You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
 
