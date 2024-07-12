@@ -26,9 +26,9 @@ def calculate_official_last_working_day(notice_accepted_date, notice_period_str)
     period_value = int(period_value)
 
     if period_type.lower() in ["day", "days"]:
-        official_last_working_day = notice_accepted_date + timedelta(days=period_value)
+        official_last_working_day = notice_accepted_date + timedelta(days=period_value) - timedelta(days=1)
     elif period_type.lower() in ["month", "months"]:
-        official_last_working_day = notice_accepted_date + relativedelta(months=period_value)
+        official_last_working_day = notice_accepted_date + relativedelta(months=period_value) - timedelta(days=1)
     else:
         raise ValueError("Invalid notice period format. Use 'days' or 'months'.")
 
@@ -70,7 +70,7 @@ def calculate_unserved_notice_days(notice_accepted_date, official_last_working_d
 # Streamlit app
 st.title("Employee Resignation Calculator")
 
-resignation_type = st.selectbox("Resignation Type", ["Resignation with Notice", "Job Abandonment", "Dismissal due to Misconduct"])
+resignation_type = st.selectbox("Resignation Type", ["Resignation with Notice"])
 employee_name = st.text_input("Employee Name", "John Doe")
 employee_id = st.text_input("Employee ID", "4200")
 notice_accepted_date = st.date_input("Notice Accepted Date", datetime(2024, 7, 12))
@@ -116,20 +116,6 @@ if st.button("Calculate"):
             leave_used_to_extend = remaining_leave_days
             final_employment_date = last_physical_working_day
             last_payroll_date = last_physical_working_day
-
-    elif resignation_type == "Job Abandonment":
-        unused_leave_days = 0
-        official_last_working_day = calculate_official_last_working_day(notice_accepted_date, notice_period)
-        unserved_notice_days_remaining = (official_last_working_day - notice_accepted_date).days
-        final_employment_date = last_physical_working_day
-        last_payroll_date = final_employment_date
-        unserved_notice_info = f"- Payment in Lieu of Notice: {notice_period}, to be recovered from the final wages."
-
-    elif resignation_type == "Dismissal due to Misconduct":
-        unused_leave_days = 0
-        unserved_notice_days_remaining = 0
-        final_employment_date = last_physical_working_day
-        last_payroll_date = final_employment_date
 
     email_template = f"""
 Subject: Resignation and Final Employment Details
@@ -187,5 +173,3 @@ Checklist for HR Ops:
 
     st.subheader("Checklist for HR Ops")
     st.text_area("Generated HR Ops Checklist", hr_ops_checklist, height=200)
-
-# To run the app, save this code in a file named 'resignation_app.py' and run `streamlit run resignation_app.py` in the terminal.
