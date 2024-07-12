@@ -29,6 +29,7 @@ def calculate_official_last_working_day(notice_accepted_date, notice_period_str)
         official_last_working_day = notice_accepted_date + timedelta(days=period_value)
     elif period_type.lower() in ["month", "months"]:
         official_last_working_day = notice_accepted_date + relativedelta(months=period_value)
+        official_last_working_day -= timedelta(days=1)  # Adjust to the day before in the following month
     else:
         raise ValueError("Invalid notice period format. Use 'days' or 'months'.")
 
@@ -110,10 +111,9 @@ if st.button("Calculate"):
             unserved_notice_info = f"{unserved_notice_days_remaining} days, to be recovered from the final wages."
         else:
             remaining_leave_days = unused_leave_days - unserved_notice_days_covered_by_leave
-            leave_details = calculate_leave_details(last_physical_working_day + timedelta(days=1), remaining_leave_days, off_days_list, adjusted_public_holidays)
-            final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
-            last_payroll_date = final_employment_date
             leave_used_to_extend = remaining_leave_days
+            final_employment_date = last_physical_working_day
+            last_payroll_date = last_physical_working_day
 
     elif resignation_type == "Job Abandonment":
         unused_leave_days = 0
@@ -147,10 +147,10 @@ Resignation Details:
 
 Leave and Payroll Details:
 - Number of Leave Days Used to Offset Short Notice: {unserved_notice_days_covered_by_leave}
-- Number of Leave Days Used to Clear Leave Balance and Extend the Last Working Date: {leave_used_to_extend}
-- Final Employment Date (Adjusted Last Working Day): {final_employment_date.strftime('%d/%m/%Y') if final_employment_date else 'N/A'}
-- Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y') if last_payroll_date else 'N/A'}
-- Unserved Notice Period (Days): {unserved_notice_info}
+- Number of Leave to be cleared during notice period: {leave_used_to_extend}
+- Final Employment Date (Adjusted Last Working Day): {last_physical_working_day.strftime('%d/%m/%Y')}
+- Last Payroll Date (Salary paid up to): {last_physical_working_day.strftime('%d/%m/%Y')}
+- Unserved Notice Period (Days): {"0.00, the short notice is covered by the leave balance" if unserved_notice_days_remaining == 0 else f"{unserved_notice_days_remaining}, to be recovered from the final wages"}
 
 You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
 
@@ -177,7 +177,7 @@ Date Processed: {processing_date.strftime('%d/%m/%Y')}
 Checklist for HR Ops:
 - [ ] Prepare acceptance of resignation with last working date as per the final date.
 - [ ] Clarify that no physical presence is required after {last_physical_working_day.strftime('%d/%m/%Y')}
-- [ ] Explain continuation of salary and benefits until {final_employment_date.strftime('%d/%m/%Y') if final_employment_date else 'N/A'}
+- [ ] Explain continuation of salary and benefits until {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Schedule handover of company property for {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Arrange for system access and door access termination on {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Conduct exit interview as per company policy
