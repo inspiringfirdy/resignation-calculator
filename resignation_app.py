@@ -27,6 +27,10 @@ requested_last_working_day = st.date_input("Requested Last Working Day", datetim
 leave_balance = st.number_input("Leave Balance (Days)", value=20, min_value=0)
 off_days = st.multiselect("Employee Off & Rest Days", ["Saturday", "Sunday"], default=["Saturday", "Sunday"])
 
+# Convert dates to datetime objects
+notice_received_date = datetime.combine(notice_received_date, datetime.min.time())
+requested_last_working_day = datetime.combine(requested_last_working_day, datetime.min.time())
+
 # Public holidays for Kuala Lumpur in 2024 (example dates)
 public_holidays = [
     "01/01/2024", "01/02/2024", "01/05/2024", "22/08/2024", "31/08/2024",
