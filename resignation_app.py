@@ -21,12 +21,12 @@ def calculate_unserved_notice(start_date, end_date):
     return (end_date - start_date).days + 1
 
 # Function to adjust holidays falling on rest days
-def adjust_holidays(holidays, rest_days):
+def adjust_holidays(holidays, off_days, rest_days):
     adjusted_holidays = []
     for holiday in holidays:
-        if holiday.weekday() in rest_days:
+        if holiday.weekday() in rest_days or holiday.weekday() in off_days:
             next_working_day = holiday + timedelta(days=1)
-            while next_working_day.weekday() in rest_days or next_working_day in holidays:
+            while next_working_day.weekday() in off_days or next_working_day.weekday() in rest_days or next_working_day in holidays:
                 next_working_day += timedelta(days=1)
             adjusted_holidays.append(next_working_day)
         else:
@@ -57,8 +57,8 @@ public_holidays = [
 ]
 public_holidays = [datetime.strptime(date, "%d/%m/%Y") for date in public_holidays]
 
-# Adjust public holidays if they fall on rest days
-adjusted_public_holidays = adjust_holidays(public_holidays, {off_day_index, rest_day_index})
+# Adjust public holidays if they fall on rest days or off days
+adjusted_public_holidays = adjust_holidays(public_holidays, {off_day_index}, {rest_day_index})
 
 # Ensure dates are properly handled and avoid type mismatch
 try:
