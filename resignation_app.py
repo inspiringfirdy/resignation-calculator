@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime, timedelta
-import calendar
 import pandas as pd
 
 # Function to handle date calculations
@@ -95,7 +94,7 @@ try:
                 option_1_leave_dates.append(current_date)
             current_date -= timedelta(days=1)
         option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
-        last_physical_date_option_1 = requested_last_working_day if leave_balance == 0 else option_1_leave_dates[0] - timedelta(days=1)
+        last_physical_date_option_1 = requested_last_working_day if leave_balance == 0 else option_1_leave_dates[0]
         last_payroll_date_option_1 = requested_last_working_day
     else:
         last_physical_date_option_1 = requested_last_working_day
