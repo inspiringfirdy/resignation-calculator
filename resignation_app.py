@@ -1,96 +1,107 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-# Function to check if a date is a workday
-def is_workday(date, off_days, public_holidays):
-    if date.weekday() in off_days or date in public_holidays:
-        return False
-    return True
-
-# Function to calculate leave details
-def calculate_leave_details(start_date, notice_period_months, notice_period_days, requested_last_day, leave_balance, off_days, public_holidays):
-    notice_period_total_days = (notice_period_months * 30) + notice_period_days
-    end_of_notice = start_date + timedelta(days=notice_period_total_days)
-    
-    # Calculate served notice period
-    served_notice_days = (requested_last_day - start_date).days + 1
-    
-    # Calculate unserved notice period
-    unserved_notice_days = (end_of_notice - requested_last_day).days
-    
-    # Offset leave balance
-    offset_leave_balance = min(unserved_notice_days, leave_balance)
-    indemnity_in_lieu_of_notice = max(0, unserved_notice_days - leave_balance)
-    
-    # Remaining leave balance to be cleared during notice period
-    remaining_leave_balance = leave_balance - offset_leave_balance
-    
-    # Calculate the last physical working day
-    current_date = requested_last_day - timedelta(days=1)
-    workdays_used = 0
-    while workdays_used < remaining_leave_balance:
-        if is_workday(current_date, off_days, public_holidays):
-            workdays_used += 1
-        current_date -= timedelta(days=1)
-    
-    last_physical_working_day = current_date + timedelta(days=1)  # Adjust to the last workday used
-
-    return {
-        "served_notice_days": served_notice_days,
-        "unserved_notice_days": unserved_notice_days,
-        "offset_leave_balance": offset_leave_balance,
-        "indemnity_in_lieu_of_notice": indemnity_in_lieu_of_notice,
-        "remaining_leave_balance": remaining_leave_balance,
-        "last_physical_working_day": last_physical_working_day.strftime('%Y/%m/%d'),
-        "last_payroll_date": requested_last_day.strftime('%Y/%m/%d')
-    }
-
-# Public holidays list (example for Kuala Lumpur)
+# Define Kuala Lumpur public holidays for 2024
 public_holidays = [
-    datetime(2024, 1, 1), datetime(2024, 1, 25), datetime(2024, 2, 1),
-    datetime(2024, 2, 10), datetime(2024, 2, 11), datetime(2024, 2, 12),
-    datetime(2024, 3, 28), datetime(2024, 4, 10), datetime(2024, 4, 11),
-    datetime(2024, 5, 1), datetime(2024, 5, 22), datetime(2024, 6, 3),
-    datetime(2024, 6, 17), datetime(2024, 7, 7), datetime(2024, 7, 8),
-    datetime(2024, 8, 31), datetime(2024, 9, 16), datetime(2024, 10, 31),
-    datetime(2024, 12, 25)
+    '2024-01-01', '2024-02-01', '2024-02-10', '2024-02-11', '2024-04-24', '2024-05-01', 
+    '2024-05-24', '2024-05-25', '2024-06-01', '2024-06-02', '2024-08-31', '2024-09-16', 
+    '2024-10-27', '2024-12-25'
 ]
 
-# Adjust public holidays if they fall on rest days
-adjusted_public_holidays = set(public_holidays)
-for holiday in public_holidays:
-    if holiday.weekday() in {5, 6}:  # Saturday or Sunday
-        next_workday = holiday + timedelta(days=1)
-        while next_workday.weekday() in {5, 6} or next_workday in public_holidays:
-            next_workday += timedelta(days=1)
-        adjusted_public_holidays.add(next_workday)
+def is_public_holiday(date):
+    date_str = date.strftime('%Y-%m-%d')
+    return date_str in public_holidays
+
+def adjust_for_public_holidays(holidays):
+    adjusted_holidays = set(holidays)
+    for holiday in holidays:
+        date = datetime.strptime(holiday, '%Y-%m-%d')
+        if date.weekday() == 5:  # Saturday
+            adjusted_holidays.add((date + timedelta(days=2)).strftime('%Y-%m-%d'))
+        elif date.weekday() == 6:  # Sunday
+            adjusted_holidays.add((date + timedelta(days=1)).strftime('%Y-%m-%d'))
+    return adjusted_holidays
+
+public_holidays_set = adjust_for_public_holidays(public_holidays)
+
+# Function to calculate last working day and payroll details
+def calculate_last_day_and_payroll(notice_date, notice_period, basic_salary, total_leave_balance, leave_utilized_during_notice, workdays_per_month=26, calendar_days_in_month=31):
+    # Calculate remaining leave balance
+    remaining_leave_balance = total_leave_balance - leave_utilized_during_notice
+
+    # Calculate daily rates
+    daily_rate_encashment = basic_salary / workdays_per_month
+    daily_rate_pro_rated = basic_salary / calendar_days_in_month
+
+    # Calculate leave encashment amount
+    leave_encashment_amount = daily_rate_encashment * remaining_leave_balance
+
+    # Determine original last working day
+    notice_date = datetime.strptime(notice_date, '%Y-%m-%d')
+    original_last_working_day = notice_date + timedelta(days=notice_period * 30)
+
+    # Extend last working day if necessary
+    remaining_leave_days = remaining_leave_balance
+    extended_last_working_day = original_last_working_day
+
+    while remaining_leave_days > 0:
+        extended_last_working_day += timedelta(days=1)
+        # Skip weekends (Saturday and Sunday) and public holidays
+        if extended_last_working_day.weekday() < 5 and not is_public_holiday(extended_last_working_day):
+            remaining_leave_days -= 1
+
+    # Calculate pro-rated salary for extended period
+    extended_days = (extended_last_working_day - original_last_working_day).days
+    pro_rated_salary = daily_rate_pro_rated * extended_days
+
+    # Calculate total payment
+    total_payment_encashment = basic_salary + leave_encashment_amount
+    total_payment_extended = basic_salary + pro_rated_salary
+
+    return {
+        "original_last_working_day": original_last_working_day.strftime('%Y-%m-%d'),
+        "extended_last_working_day": extended_last_working_day.strftime('%Y-%m-%d'),
+        "leave_encashment_amount": leave_encashment_amount,
+        "pro_rated_salary": pro_rated_salary,
+        "total_payment_encashment": total_payment_encashment,
+        "total_payment_extended": total_payment_extended
+    }
 
 # Streamlit app
-st.title("Employee Resignation Calculator")
+st.title('Last Working Day and Payroll Calculator')
 
 # Input fields
-resignation_date = st.date_input("Resignation Date", datetime(2024, 7, 15))
-notice_period_months = st.number_input("Notice Period (months)", value=0)
-notice_period_days = st.number_input("Notice Period (days)", value=30)
-requested_last_day = st.date_input("Requested Last Working Day", datetime(2024, 7, 31))
-leave_balance = st.number_input("Leave Balance (days)", value=20)
-
-off_days_input = st.text_input("Enter off days (comma-separated, e.g., 'saturday,sunday')", 'saturday,sunday')
-off_days_map = {'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3, 'friday': 4, 'saturday': 5, 'sunday': 6}
-off_days = [off_days_map[day.strip().lower()] for day in off_days_input.split(',') if day.strip().lower() in off_days_map]
+employee_name = st.text_input('Employee Name', 'Kelly Chew Qiao Wei')
+employee_number = st.text_input('Employee Number', 'TC2145')
+position = st.text_input('Position', 'Customer Management Executive')
+project_department = st.text_input('Project/Department', 'SingtelTV Upsell')
+notice_date = st.date_input('Notice Date', datetime(2024, 5, 31))
+notice_period = st.number_input('Notice Period (months)', 1, format='%d')
+basic_salary = st.number_input('Basic Salary (RM)', 3161.09, format='%.2f')
+total_leave_balance = st.number_input('Total Leave Balance (days)', 30.50, format='%.2f')
+leave_utilized_during_notice = st.number_input('Leave Utilized During Notice Period (days)', 23, format='%.2f')
+workdays_per_month = st.number_input('Workdays Per Month', 26, format='%d')
+calendar_days_in_month_june = st.number_input('Calendar Days in June', 30, format='%d')
+calendar_days_in_month_july = st.number_input('Calendar Days in July', 31, format='%d')
 
 # Calculate button
-if st.button("Calculate"):
-    start_date = datetime.strptime(str(resignation_date), '%Y-%m-%d')
-    requested_last_day_dt = datetime.strptime(str(requested_last_day), '%Y-%m-%d')
-    
-    results = calculate_leave_details(start_date, notice_period_months, notice_period_days, requested_last_day_dt, leave_balance, off_days, adjusted_public_holidays)
-    
-    st.subheader("Results")
-    st.write("Served Notice Days:", results["served_notice_days"])
-    st.write("Unserved Notice Days:", results["unserved_notice_days"])
-    st.write("Offset Leave Balance:", results["offset_leave_balance"])
-    st.write("Indemnity in Lieu of Notice:", results["indemnity_in_lieu_of_notice"])
-    st.write("Remaining Leave Balance:", results["remaining_leave_balance"])
-    st.write("Last Physical Working Day:", results["last_physical_working_day"])
-    st.write("Last Payroll Date:", results["last_payroll_date"])
+if st.button('Calculate'):
+    result = calculate_last_day_and_payroll(
+        notice_date.strftime('%Y-%m-%d'),
+        notice_period,
+        basic_salary,
+        total_leave_balance,
+        leave_utilized_during_notice,
+        workdays_per_month,
+        calendar_days_in_month_july
+    )
+
+    st.write(f"**Original Last Working Day**: {result['original_last_working_day']}")
+    st.write(f"**Extended Last Working Day**: {result['extended_last_working_day']}")
+    st.write(f"**Leave Encashment Amount**: RM {result['leave_encashment_amount']:.2f}")
+    st.write(f"**Pro-rated Salary for Extended Period**: RM {result['pro_rated_salary']:.2f}")
+    st.write(f"**Total Payment (Encashment)**: RM {result['total_payment_encashment']:.2f}")
+    st.write(f"**Total Payment (Extended)**: RM {result['total_payment_extended']:.2f}")
+
+# Run the app
+# To run this app, save the script as `app.py` and execute `streamlit run app.py` in your terminal.
