@@ -25,14 +25,14 @@ def calculate_leave_details(start_date, notice_period_days, requested_last_day, 
     remaining_leave_balance = leave_balance - offset_leave_balance
     
     # Calculate the last physical working day
-    workdays = []
-    current_date = requested_last_day
-    while len(workdays) < remaining_leave_balance:
+    current_date = requested_last_day - timedelta(days=1)
+    workdays_used = 0
+    while workdays_used < remaining_leave_balance:
         if is_workday(current_date, off_days, public_holidays):
-            workdays.append(current_date)
+            workdays_used += 1
         current_date -= timedelta(days=1)
     
-    last_physical_working_day = workdays[-1] if workdays else requested_last_day
+    last_physical_working_day = current_date + timedelta(days=1)  # Adjust to the last workday used
 
     return {
         "served_notice_days": served_notice_days,
