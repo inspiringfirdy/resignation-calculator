@@ -17,21 +17,14 @@ def calculate_official_last_day(received_date, period_months):
 def calculate_days_served(start_date, end_date):
     return (end_date - start_date).days + 1
 
-def calculate_unserved_notice(start_date, end_date):
-    return (end_date - start_date).days + 1
-
-# Function to adjust holidays falling on rest days
-def adjust_holidays(holidays, off_days, rest_days):
-    adjusted_holidays = []
-    for holiday in holidays:
-        if holiday.weekday() in rest_days or holiday.weekday() in off_days:
-            next_working_day = holiday + timedelta(days=1)
-            while next_working_day.weekday() in off_days or next_working_day.weekday() in rest_days or next_working_day in holidays:
-                next_working_day += timedelta(days=1)
-            adjusted_holidays.append(next_working_day)
-        else:
-            adjusted_holidays.append(holiday)
-    return adjusted_holidays
+def calculate_unserved_notice(start_date, end_date, off_days, rest_days, public_holidays):
+    current_date = start_date
+    unserved_days = []
+    while current_date <= end_date:
+        if current_date.weekday() not in off_days and current_date.weekday() not in rest_days and current_date not in public_holidays:
+            unserved_days.append(current_date)
+        current_date += timedelta(days=1)
+    return unserved_days
 
 # Input parameters from the user
 notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 15))
@@ -70,7 +63,8 @@ try:
     full_notice_period_days = calculate_days_served(notice_received_date, official_last_day)
     unserved_notice_start = requested_last_working_day + timedelta(days=1)
     unserved_notice_end = official_last_day
-    days_unserved = calculate_unserved_notice(unserved_notice_start, unserved_notice_end)
+    unserved_notice_dates = calculate_unserved_notice(unserved_notice_start, unserved_notice_end, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
+    days_unserved = len(unserved_notice_dates)
 
     leave_used_to_offset_notice = min(leave_balance, days_unserved)
     updated_leave_balance = leave_balance - leave_used_to_offset_notice
@@ -78,7 +72,7 @@ try:
 
     # Option handling based on leave balance
     option_1_leave_dates = []
-    if updated_leave_balance > 0:
+    if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
         current_date = requested_last_working_day
         while len(option_1_leave_dates) < updated_leave_balance and current_date >= notice_served_start:
@@ -88,9 +82,13 @@ try:
         option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
         last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else None
         last_payroll_date_option_1 = requested_last_working_day
+    else:
+        last_physical_date_option_1 = None
+        last_payroll_date_option_1 = requested_last_working_day
 
+    option_2_extended_dates = []
+    if leave_balance > 0:
         # Option 2: Extend the last working day starting from the next working day of the requested last working day
-        option_2_extended_dates = []
         current_date = unserved_notice_start
         while len(option_2_extended_dates) < updated_leave_balance:
             if current_date.weekday() not in {off_day_index, rest_day_index} and current_date not in adjusted_public_holidays:
@@ -98,6 +96,9 @@ try:
             current_date += timedelta(days=1)
         last_physical_date_option_2 = requested_last_working_day
         last_payroll_date_option_2 = option_2_extended_dates[-1] if option_2_extended_dates else None
+    else:
+        last_physical_date_option_2 = requested_last_working_day
+        last_payroll_date_option_2 = requested_last_working_day
 
     # Output results
     results = {
