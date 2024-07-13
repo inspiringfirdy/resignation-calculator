@@ -128,9 +128,11 @@ if resignation_type == "Resignation with Notice":
 
     # Calculate leave days to extend last physical working day
     leave_used_to_extend = unused_leave_balance - leave_to_clear_during_notice
-    final_employment_date = last_physical_working_day + timedelta(days=leave_used_to_extend)
+    last_physical_working_day_extended = last_physical_working_day + timedelta(days=leave_used_to_extend)
 
+    final_employment_date = last_physical_working_day_extended
     last_payroll_date = final_employment_date
+
     leave_used_to_offset_short_notice = unserved_notice_days_covered_by_leave
 
 # Crafting email template
