@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 # Function to calculate the official last day
 def calculate_official_last_day(notice_received_date, notice_required_months):
-    official_last_day = notice_received_date + timedelta(days=30*notice_required_months) - timedelta(days=1)
-    return official_last_day
+    official_last_day = notice_received_date + timedelta(days=30*notice_required_months)
+    return official_last_day - timedelta(days=1)
 
 # Function to calculate total number of days served
 def calculate_days_served(notice_served_start_date, notice_served_end_date):
@@ -41,7 +41,7 @@ st.write(f"Official Last Day: {official_last_day.strftime('%d/%m/%Y')}")
 st.write(f"Notice Served (Date): {notice_served_start_date.strftime('%d/%m/%Y')} - {notice_served_end_date.strftime('%d/%m/%Y')}")
 st.write(f"Total Number of Days Served: {total_days_served} days")
 st.write(f"Full Notice Period (Days): {full_notice_period_days} days")
-st.write(f"Unserved Notice (Date): {last_working_day + timedelta(days=1)} - {official_last_day}")
+st.write(f"Unserved Notice (Date): {(last_working_day + timedelta(days=1)).strftime('%d/%m/%Y')} - {official_last_day.strftime('%d/%m/%Y')}")
 st.write(f"Total Number of Days Unserved: {unserved_notice_days} days")
 st.write(f"Total Leave Balance: {leave_balance} days")
 st.write(f"Leave Used to Offset Notice: {leave_used_to_offset_notice} days")
@@ -54,12 +54,13 @@ if updated_leave_balance > 0:
     option = st.radio("Choose an option:", ("Option 1: Clear leave during notice period", "Option 2: Extend last working day"))
 
     if option == "Option 1: Clear leave during notice period":
-        st.write(f"Leave to clear on {notice_served_start_date + timedelta(days=total_days_served)} to {last_working_day}")
-        st.write(f"Last Physical Date: {notice_served_start_date + timedelta(days=total_days_served - 1)}")
-        st.write(f"Last Payroll Date: {last_working_day}")
+        st.write(f"Leave to clear on {(last_working_day - timedelta(days=leave_used_to_offset_notice - 1)).strftime('%d/%m/%Y')} to {last_working_day.strftime('%d/%m/%Y')}")
+        st.write(f"Last Physical Date: {(last_working_day - timedelta(days=leave_used_to_offset_notice)).strftime('%d/%m/%Y')}")
+        st.write(f"Last Payroll Date: {last_working_day.strftime('%d/%m/%Y')}")
     else:
+        extended_last_day = last_working_day + timedelta(days=updated_leave_balance)
         st.write(f"Extend the last working day from {last_working_day + timedelta(days=1)} for {updated_leave_balance} days")
-        st.write(f"Last Physical Date: {official_last_day}")
-        st.write(f"Last Payroll Date: {official_last_day}")
+        st.write(f"Last Physical Date: {extended_last_day.strftime('%d/%m/%Y')}")
+        st.write(f"Last Payroll Date: {official_last_day.strftime('%d/%m/%Y')}")
 
 # Run the app with: streamlit run leave_calculation_app.py
