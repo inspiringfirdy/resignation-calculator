@@ -158,10 +158,10 @@ Resignation Details:
 - Last Physical Working Day: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-- LEAVE BALANCE:
+- Leave Balance:
 - Number of Leave Days Used to Offset Short Notice: {leave_used_to_offset_short_notice}
-{f"- Number of Leave Days Used to BE CLEARED DURING WORKDAYS DURING NOTICE SERVED: {leave_to_clear_during_notice}" if leave_to_clear_during_notice > 0 else ""}
-{f"- Number of Leave Days Used to Extend Last PHYSICAL Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
+{f"- Number of Leave Days Used to be Cleared During Workdays Through Out Notice Period: {leave_to_clear_during_notice}" if leave_to_clear_during_notice > 0 else ""}
+{f"- Number of Leave Days Used to Extend Last Physical Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 {unserved_notice_info}
 
