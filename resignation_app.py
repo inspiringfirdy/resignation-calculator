@@ -20,7 +20,17 @@ def calculate_days_served(start_date, end_date):
 def calculate_unserved_notice(start_date, end_date):
     return (end_date - start_date).days + 1
 
-def calculate_leave_dates(start_date, leave_balance, off_days, rest_days, public_holidays):
+def calculate_leave_dates_backward(start_date, leave_balance, off_days, rest_days, public_holidays):
+    leave_dates = []
+    current_date = start_date
+    while leave_balance > 0:
+        if current_date.weekday() not in off_days and current_date.weekday() not in rest_days and current_date not in public_holidays:
+            leave_dates.append(current_date)
+            leave_balance -= 1
+        current_date -= timedelta(days=1)
+    return leave_dates[::-1]  # Reverse to maintain chronological order
+
+def calculate_leave_dates_forward(start_date, leave_balance, off_days, rest_days, public_holidays):
     leave_dates = []
     current_date = start_date
     while leave_balance > 0:
@@ -93,8 +103,8 @@ try:
     option_1_leave_dates = []
     if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
-        option_1_leave_dates = calculate_leave_dates(requested_last_working_day + timedelta(days=1), leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
-        last_physical_date_option_1 = option_1_leave_dates[-1] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day
+        option_1_leave_dates = calculate_leave_dates_backward(requested_last_working_day - timedelta(days=1), leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
+        last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day - timedelta(days=1)
         last_payroll_date_option_1 = requested_last_working_day
     else:
         last_physical_date_option_1 = requested_last_working_day
@@ -103,7 +113,7 @@ try:
     option_2_extended_dates = []
     if leave_balance > 0:
         # Option 2: Extend the last working day starting from the next working day of the requested last working day
-        option_2_extended_dates = calculate_leave_dates(unserved_notice_start, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
+        option_2_extended_dates = calculate_leave_dates_forward(unserved_notice_start, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
         last_physical_date_option_2 = requested_last_working_day
         last_payroll_date_option_2 = option_2_extended_dates[-1] if option_2_extended_dates else requested_last_working_day
     else:
