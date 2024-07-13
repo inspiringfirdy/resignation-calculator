@@ -1,39 +1,42 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-def calculate_last_working_day(resignation_date, notice_period_days):
-    return resignation_date + timedelta(days=notice_period_days)
+def calculate_last_working_day(resignation_date, notice_period_days, leave_balance, use_leave_to_offset):
+    if use_leave_to_offset:
+        total_days = notice_period_days - leave_balance
+    else:
+        total_days = notice_period_days
+    return resignation_date + timedelta(days=total_days)
 
 def main():
     st.title("Resignation Scenarios and Treatments")
 
-    scenarios = {
-        "Immediate Resignation": 0,
-        "Resignation with Full Notice": 30,
-        "Resignation During Probation": 7,
-        "Resignation for Immediate Health or Personal Reasons": 0,
-        "Resignation with Garden Leave": 30,
-        "Mutual Agreement": 0,
-        "Resignation with Outstanding Projects": 30,
-        "Resignation with Legal or Disciplinary Issues": 30
-    }
+    scenarios = [
+        "Immediate Resignation",
+        "Resignation with Full Notice",
+        "Resignation During Probation",
+        "Resignation for Immediate Health or Personal Reasons",
+        "Resignation with Garden Leave",
+        "Mutual Agreement",
+        "Resignation with Outstanding Projects",
+        "Resignation with Legal or Disciplinary Issues"
+    ]
 
     st.header("Determine Last Working Day Based on Resignation Scenario")
     
-    scenario = st.selectbox("Select Resignation Scenario:", list(scenarios.keys()))
+    scenario = st.selectbox("Select Resignation Scenario:", scenarios)
     resignation_date = st.date_input("Resignation Date:", datetime.today())
+    notice_period_days = st.number_input("Enter Notice Period (in days):", min_value=0, step=1, value=0)
+    leave_balance = st.number_input("Enter Leave Balance (in days):", min_value=0, step=1, value=0)
+    use_leave_to_offset = st.checkbox("Use leave balance to offset notice period?", value=False)
 
-    if scenario == "Mutual Agreement":
-        custom_notice_period = st.number_input("Enter agreed notice period in days:", min_value=0)
-        notice_period_days = custom_notice_period
-    else:
-        notice_period_days = scenarios[scenario]
-
-    last_working_day = calculate_last_working_day(resignation_date, notice_period_days)
+    last_working_day = calculate_last_working_day(resignation_date, notice_period_days, leave_balance, use_leave_to_offset)
 
     st.subheader("Resignation Details")
     st.write(f"Resignation Scenario: {scenario}")
     st.write(f"Notice Period (days): {notice_period_days}")
+    st.write(f"Leave Balance (days): {leave_balance}")
+    st.write(f"Using Leave to Offset Notice Period: {use_leave_to_offset}")
     st.write(f"Last Working Day: {last_working_day.strftime('%Y-%m-%d')}")
 
     st.subheader("Steps for Handling Resignation")
