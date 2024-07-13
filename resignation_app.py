@@ -152,16 +152,16 @@ Employee ID: {employee_id}
 
 Resignation Details:
 - Resignation Type: {resignation_type}
-- Notice Accepted Date: {notice_accepted_date.strftime('%d/%m/%Y')}
-- Notice Required: {notice_period}
+- Notice Received on: {notice_accepted_date.strftime('%d/%m/%Y')}
+- Notice Required as per Employment Contract: {notice_period}
 - Official Last Working Day: {official_last_working_day.strftime('%d/%m/%Y')}
-- Last Physical Working Day: {last_physical_working_day.strftime('%d/%m/%Y')}
+- Last Working Day Requested: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-- Leave Balance:
+- LEAVE BALANCE:
 - Number of Leave Days Used to Offset Short Notice: {leave_used_to_offset_short_notice}
-{f"- Number of Leave Days Used to be Cleared During Workdays Through Out Notice Period: {leave_to_clear_during_notice}" if leave_to_clear_during_notice > 0 else ""}
-{f"- Number of Leave Days Used to Extend Last Physical Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
+{f"- Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_to_clear_during_notice}" if leave_to_clear_during_notice > 0 else ""}
+{f"- Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 {unserved_notice_info}
 
