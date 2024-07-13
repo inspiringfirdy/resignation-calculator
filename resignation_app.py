@@ -115,9 +115,9 @@ Resignation Details:
 - Last Working Day Requested: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-LEAVE BALANCE: {unused_leave_days} days
+Leave Balance: {unused_leave_days} days
 Number of Leave Days Used to Offset Short Notice: 17
-Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_used_to_clear_during_notice}
+Number of Leave Days Used to be Cleared Throughout Notice Period: {leave_used_to_clear_during_notice}
 Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_days_to_extend}
 Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 
