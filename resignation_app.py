@@ -31,10 +31,11 @@ off_days = st.multiselect("Employee Off & Rest Days", ["Saturday", "Sunday"], de
 notice_received_date = datetime.combine(notice_received_date, datetime.min.time())
 requested_last_working_day = datetime.combine(requested_last_working_day, datetime.min.time())
 
-# Public holidays for Kuala Lumpur in 2024 (example dates)
+# Public holidays for Kuala Lumpur in 2024
 public_holidays = [
-    "01/01/2024", "01/02/2024", "01/05/2024", "22/08/2024", "31/08/2024",
-    # Add more public holidays as needed
+    "01/01/2024", "12/02/2024", "01/05/2024", "22/05/2024", "29/05/2024", "01/06/2024",
+    "07/07/2024", "19/07/2024", "22/08/2024", "31/08/2024", "16/09/2024", "14/10/2024",
+    "11/11/2024", "12/12/2024", "25/12/2024"
 ]
 public_holidays = [datetime.strptime(date, "%d/%m/%Y") for date in public_holidays]
 
@@ -101,7 +102,7 @@ try:
 
     # Display results using pandas DataFrame
     results_df = pd.DataFrame(list(results.items()), columns=["Item", "Value"])
-    st.dataframe(results_df)
+    st.table(results_df)
 
 except Exception as e:
     st.error(f"An error occurred: {e}")
