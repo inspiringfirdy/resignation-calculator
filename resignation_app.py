@@ -20,24 +20,45 @@ def calculate_days_served(start_date, end_date):
 def calculate_unserved_notice(start_date, end_date):
     return (end_date - start_date).days + 1
 
+# Function to adjust holidays falling on rest days
+def adjust_holidays(holidays, rest_days):
+    adjusted_holidays = []
+    for holiday in holidays:
+        if holiday.weekday() in rest_days:
+            next_working_day = holiday + timedelta(days=1)
+            while next_working_day.weekday() in rest_days or next_working_day in holidays:
+                next_working_day += timedelta(days=1)
+            adjusted_holidays.append(next_working_day)
+        else:
+            adjusted_holidays.append(holiday)
+    return adjusted_holidays
+
 # Input parameters from the user
 notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 15))
 notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
 requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 2))
 leave_balance = st.number_input("Leave Balance (Days)", value=20, min_value=0)
-off_days = st.multiselect("Employee Off & Rest Days", ["Saturday", "Sunday"], default=["Saturday", "Sunday"])
+off_day = st.selectbox("Off Day", ["Saturday", "Sunday"], index=0)
+rest_day = st.selectbox("Rest Day", ["Saturday", "Sunday"], index=1)
+
+# Convert days to weekday indices
+off_day_index = 5 if off_day == "Saturday" else 6
+rest_day_index = 5 if rest_day == "Saturday" else 6
 
 # Convert dates to datetime objects
 notice_received_date = datetime.combine(notice_received_date, datetime.min.time())
 requested_last_working_day = datetime.combine(requested_last_working_day, datetime.min.time())
 
-# Public holidays for Kuala Lumpur in 2024
+# List of public holidays for Kuala Lumpur in 2024
 public_holidays = [
-    "01/01/2024", "12/02/2024", "01/05/2024", "22/05/2024", "29/05/2024", "01/06/2024",
-    "07/07/2024", "19/07/2024", "22/08/2024", "31/08/2024", "16/09/2024", "14/10/2024",
-    "11/11/2024", "12/12/2024", "25/12/2024"
+    "01/01/2024", "25/01/2024", "01/02/2024", "10/02/2024", "11/02/2024", "12/02/2024", "28/03/2024",
+    "10/04/2024", "11/04/2024", "01/05/2024", "22/05/2024", "03/06/2024", "17/06/2024", "07/07/2024",
+    "08/07/2024", "31/08/2024", "16/09/2024", "31/10/2024", "25/12/2024"
 ]
 public_holidays = [datetime.strptime(date, "%d/%m/%Y") for date in public_holidays]
+
+# Adjust public holidays if they fall on rest days
+adjusted_public_holidays = adjust_holidays(public_holidays, {off_day_index, rest_day_index})
 
 # Ensure dates are properly handled and avoid type mismatch
 try:
@@ -61,7 +82,7 @@ try:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
         current_date = requested_last_working_day
         while len(option_1_leave_dates) < updated_leave_balance and current_date >= notice_served_start:
-            if current_date.weekday() < 5 and current_date not in public_holidays:  # Weekday and not a public holiday
+            if current_date.weekday() not in {off_day_index, rest_day_index} and current_date not in adjusted_public_holidays:
                 option_1_leave_dates.append(current_date)
             current_date -= timedelta(days=1)
         option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
@@ -72,7 +93,7 @@ try:
         option_2_extended_dates = []
         current_date = unserved_notice_start
         while len(option_2_extended_dates) < updated_leave_balance:
-            if current_date.weekday() < 5 and current_date not in public_holidays:  # Weekday and not a public holiday
+            if current_date.weekday() not in {off_day_index, rest_day_index} and current_date not in adjusted_public_holidays:
                 option_2_extended_dates.append(current_date)
             current_date += timedelta(days=1)
         last_physical_date_option_2 = requested_last_working_day
