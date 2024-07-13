@@ -39,7 +39,7 @@ def adjust_holidays(holidays, off_days, rest_days):
     return adjusted_holidays
 
 # Input parameters from the user
-notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 15))
+notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 18))
 notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
 requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 14))
 leave_balance = st.number_input("Leave Balance (Days)", value=0, min_value=0)
