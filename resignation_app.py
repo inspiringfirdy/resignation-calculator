@@ -106,27 +106,29 @@ if st.button("Calculate"):
         unserved_notice_days_remaining = unserved_notice_days - unserved_notice_days_covered_by_leave
         unused_leave_balance = unused_leave_days - unserved_notice_days_covered_by_leave
 
-        if leave_option == "Clear leave during notice":
-            leave_used_to_extend = 0
-            if unserved_notice_days_remaining > 0:
-                final_employment_date = last_physical_working_day
-                last_payroll_date = last_physical_working_day
-                unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
-                if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
-                    unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
-                unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
-            else:
-                final_employment_date = official_last_working_day
-                last_payroll_date = final_employment_date
+        if unserved_notice_days_remaining > 0:
+            final_employment_date = last_physical_working_day
+            last_payroll_date = last_physical_working_day
+            unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
+            if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
+                unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
+            unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
         else:
-            if unused_leave_balance > 0:
-                leave_used_to_extend = unused_leave_balance
-                unused_leave_balance = 0  # All leave is used, no encashment
-                leave_details = calculate_leave_details(official_last_working_day + timedelta(days=1), leave_used_to_extend, off_days_list, adjusted_public_holidays)
+            if leave_option == "Clear leave during notice":
+                leave_used_to_extend = 0
+                remaining_leave_days = unused_leave_balance
+                leave_details = calculate_leave_details(last_physical_working_day + timedelta(days=1), remaining_leave_days, off_days_list, adjusted_public_holidays)
                 final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
+                last_payroll_date = final_employment_date
             else:
-                final_employment_date = official_last_working_day
-            last_payroll_date = final_employment_date
+                if unused_leave_balance > 0:
+                    leave_used_to_extend = unused_leave_balance
+                    unused_leave_balance = 0  # All leave is used, no encashment
+                    leave_details = calculate_leave_details(official_last_working_day + timedelta(days=1), leave_used_to_extend, off_days_list, adjusted_public_holidays)
+                    final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
+                else:
+                    final_employment_date = official_last_working_day
+                last_payroll_date = final_employment_date
 
     email_template = f"""
 Subject: Resignation and Final Employment Details
@@ -146,11 +148,10 @@ Resignation Details:
 
 Leave and Payroll Details:
 - Number of Leave Days Used to Offset Short Notice: {unserved_notice_days_covered_by_leave}
-- Number of Leave to be cleared during notice period: {leave_used_to_extend}
+- Number of Leave to be cleared during notice period: {unused_leave_balance if leave_option == "Clear leave during notice" else 0}
 - Final Employment Date (Adjusted Last Working Day): {final_employment_date.strftime('%d/%m/%Y')}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 - Unserved Notice Period (Days): {"0.00, the short notice is covered by the leave balance" if unserved_notice_days_remaining == 0 else f"{unserved_notice_info}"}
-- Unused Leave Balance (Not Encashable): {unused_leave_balance}
 
 You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
 
