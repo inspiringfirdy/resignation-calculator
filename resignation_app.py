@@ -128,10 +128,14 @@ if resignation_type == "Resignation with Notice":
 
     # Calculate leave days to extend last physical working day
     leave_used_to_extend = unused_leave_balance - leave_to_clear_during_notice
-    last_physical_working_day_extended = last_physical_working_day + timedelta(days=leave_used_to_extend)
+    final_extended_working_date = last_physical_working_day
 
-    final_employment_date = last_physical_working_day_extended
-    last_payroll_date = final_employment_date
+    for _ in range(leave_used_to_extend):
+        final_extended_working_date += timedelta(days=1)
+        while final_extended_working_date.weekday() in off_days_list or final_extended_working_date in adjusted_public_holidays:
+            final_extended_working_date += timedelta(days=1)
+
+    last_payroll_date = final_extended_working_date
 
     leave_used_to_offset_short_notice = unserved_notice_days_covered_by_leave
 
@@ -194,7 +198,7 @@ hr_ops_checklist = f"""
 Checklist for HR Ops:
 - [ ] Prepare acceptance of resignation with last working date as per the final date.
 - [ ] Clarify that no physical presence is required after {last_physical_working_day.strftime('%d/%m/%Y')}
-- [ ] Explain continuation of salary and benefits until {final_employment_date.strftime('%d/%m/%Y')}
+- [ ] Explain continuation of salary and benefits until {final_extended_working_date.strftime('%d/%m/%Y')}
 - [ ] Schedule handover of company property for {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Arrange for system access and door access termination on {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Conduct exit interview as per company policy
