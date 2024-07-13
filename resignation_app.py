@@ -55,8 +55,8 @@ def adjust_holidays(holidays, off_days, rest_days):
 # Input parameters from the user
 notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 18))
 notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
-requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 14))
-leave_balance = st.number_input("Leave Balance (Days)", value=2, min_value=0)
+requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 17))
+leave_balance = st.number_input("Leave Balance (Days)", value=3, min_value=0)
 off_day = st.selectbox("Off Day", ["Saturday", "Sunday"], index=0)
 rest_day = st.selectbox("Rest Day", ["Saturday", "Sunday"], index=1)
 
@@ -104,8 +104,8 @@ try:
     if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
         option_1_leave_dates = calculate_leave_dates_backward(official_last_day, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
-        last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day
-        last_payroll_date_option_1 = requested_last_working_day
+        last_physical_date_option_1 = official_last_day - timedelta(days=len(option_1_leave_dates))
+        last_payroll_date_option_1 = official_last_day  # The official last day should be the last payroll date for Option 1
     else:
         last_physical_date_option_1 = requested_last_working_day
         last_payroll_date_option_1 = requested_last_working_day
