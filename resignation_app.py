@@ -118,15 +118,17 @@ if resignation_type == "Resignation with Notice":
     unserved_notice_days_covered_by_leave = min(unserved_notice_days, unused_leave_days)
     unserved_notice_days_remaining = unserved_notice_days - unserved_notice_days_covered_by_leave
     unused_leave_balance = unused_leave_days - unserved_notice_days_covered_by_leave
-    leave_used_to_extend = 0
-    leave_to_clear_during_notice = 0
 
-    if unserved_notice_days_remaining > 0:
-        final_employment_date = last_physical_working_day
-    else:
-        remaining_leave_days = unused_leave_days - unserved_notice_days_covered_by_leave
-        leave_to_clear_during_notice = remaining_leave_days
-        final_employment_date = last_physical_working_day - timedelta(days=remaining_leave_days)
+    # Calculate leave days to be cleared during notice period
+    workdays_during_notice_period = sum(
+        1 for day in (notice_accepted_date + timedelta(days=i) for i in range((last_physical_working_day - notice_accepted_date).days + 1))
+        if day.weekday() not in off_days_list and day not in adjusted_public_holidays
+    )
+    leave_to_clear_during_notice = min(unused_leave_balance, workdays_during_notice_period)
+
+    # Calculate leave days to extend last physical working day
+    leave_used_to_extend = unused_leave_balance - leave_to_clear_during_notice
+    final_employment_date = last_physical_working_day + timedelta(days=leave_used_to_extend)
 
     last_payroll_date = final_employment_date
     leave_used_to_offset_short_notice = unserved_notice_days_covered_by_leave
@@ -158,10 +160,10 @@ Resignation Details:
 - Last Working Day Requested: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-- LEAVE BALANCE:
+- LEAVE BALANCE: {unused_leave_days} days
 - Number of Leave Days Used to Offset Short Notice: {leave_used_to_offset_short_notice}
 - Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_to_clear_during_notice}
-{f"- Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
+- Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_used_to_extend}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 {unserved_notice_info}
 
