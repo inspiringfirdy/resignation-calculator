@@ -28,7 +28,7 @@ def calculate_leave_dates_backward(start_date, leave_balance, off_days, rest_day
             leave_dates.append(current_date)
             leave_balance -= 1
         current_date -= timedelta(days=1)
-    return leave_dates[::-1]  # Reverse to maintain chronological order
+    return leave_dates
 
 def calculate_leave_dates_forward(start_date, leave_balance, off_days, rest_days, public_holidays):
     leave_dates = []
@@ -104,7 +104,7 @@ try:
     if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
         option_1_leave_dates = calculate_leave_dates_backward(official_last_day, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
-        last_physical_date_option_1 = official_last_day - timedelta(days=len(option_1_leave_dates))
+        last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day
         last_payroll_date_option_1 = official_last_day  # The official last day should be the last payroll date for Option 1
     else:
         last_physical_date_option_1 = requested_last_working_day
@@ -134,7 +134,7 @@ try:
         "Short Notice (to be recovered through final pay)": short_notice_days if short_notice_days > 0 else 0,
         "Option 1 Description": "Clear leave on working days during the notice period, excluding off days and public holidays. The last physical working day is the day before the employee starts their leave.",
         "Option 1 Leave Dates": [date.strftime("%d/%m/%Y") for date in option_1_leave_dates],
-        "Last Physical Date Option 1": last_physical_date_option_1.strftime("%d/%m/%Y") if last_physical_date_option_1 else None,
+        "Last Physical Date Option 1": (option_1_leave_dates[0] - timedelta(days=1)).strftime("%d/%m/%Y") if option_1_leave_dates else None,
         "Last Payroll Date Option 1": last_payroll_date_option_1.strftime("%d/%m/%Y"),
         "Option 2 Description": "Extend the last working day starting from the next working day after the requested last working day, excluding off days and public holidays.",
         "Option 2 Extended Dates": [date.strftime("%d/%m/%Y") for date in option_2_extended_dates],
