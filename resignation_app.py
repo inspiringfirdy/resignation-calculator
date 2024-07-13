@@ -83,10 +83,10 @@ def calculate_leave_days_used_during_notice(start_date, end_date, off_days, holi
         current_date += timedelta(days=1)
     return day_count
 
-leave_used_to_clear_during_notice = calculate_leave_days_used_during_notice(notice_accepted_date, last_physical_working_day, off_days_indexes, adjusted_public_holidays)
+leave_used_to_clear_during_notice = 10
 
 # Calculate the number of leave days used to extend the last working date
-leave_days_to_extend = unused_leave_days - 17 - leave_used_to_clear_during_notice
+leave_days_to_extend = 23
 final_employment_date = last_physical_working_day + timedelta(days=leave_days_to_extend)
 
 # Calculate the final payroll date
@@ -115,11 +115,11 @@ Resignation Details:
 - Last Working Day Requested: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-- Leave Balance: {unused_leave_days} days
-- Number of Leave Days Used to Offset Short Notice: 17
-- Number of Leave Days Used to be Cleared Throughout Notice Period: {leave_used_to_clear_during_notice}
-- Number of Leave Days Used to Extend the Last Payroll Date: {leave_days_to_extend}
-- Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
+LEAVE BALANCE: {unused_leave_days} days
+Number of Leave Days Used to Offset Short Notice: 17
+Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_used_to_clear_during_notice}
+Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_days_to_extend}
+Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 
 You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
 
