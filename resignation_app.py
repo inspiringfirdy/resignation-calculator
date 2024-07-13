@@ -42,7 +42,7 @@ def adjust_holidays(holidays, off_days, rest_days):
 notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 18))
 notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
 requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 14))
-leave_balance = st.number_input("Leave Balance (Days)", value=0, min_value=0)
+leave_balance = st.number_input("Leave Balance (Days)", value=2, min_value=0)
 off_day = st.selectbox("Off Day", ["Saturday", "Sunday"], index=0)
 rest_day = st.selectbox("Rest Day", ["Saturday", "Sunday"], index=1)
 
@@ -95,7 +95,7 @@ try:
                 option_1_leave_dates.append(current_date)
             current_date -= timedelta(days=1)
         option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
-        last_physical_date_option_1 = requested_last_working_day if leave_balance == 0 else option_1_leave_dates[0]
+        last_physical_date_option_1 = requested_last_working_day if leave_balance == 0 else (option_1_leave_dates[0] if option_1_leave_dates else requested_last_working_day)
         last_payroll_date_option_1 = requested_last_working_day
     else:
         last_physical_date_option_1 = requested_last_working_day
