@@ -153,7 +153,7 @@ Employee ID: {employee_id}
 Resignation Details:
 - Resignation Type: {resignation_type}
 - Notice Accepted Date: {notice_accepted_date.strftime('%d/%m/%Y')}
-- NOTICE REQUIRED: {notice_period}
+- Notice Required: {notice_period}
 - Official Last Working Day: {official_last_working_day.strftime('%d/%m/%Y')}
 - Last Physical Working Day: {last_physical_working_day.strftime('%d/%m/%Y')}
 
