@@ -70,7 +70,7 @@ def calculate_unserved_notice_days(notice_accepted_date, official_last_working_d
 # Streamlit app
 st.title("Employee Resignation Calculator")
 
-resignation_type = st.selectbox("Resignation Type", ["Resignation with Notice", "Job Abandonment", "Dismissal due to Misconduct"])
+resignation_type = st.selectbox("Resignation Type", ["Resignation with Notice"])
 employee_name = st.text_input("Employee Name", "John Doe")
 employee_id = st.text_input("Employee ID", "4200")
 notice_accepted_date = st.date_input("Notice Accepted Date", datetime(2024, 7, 12))
@@ -80,6 +80,7 @@ last_physical_working_day = st.date_input("Last Physical Working Day", datetime(
 off_days = st.text_input("Off Days", "saturday, sunday")
 processor = st.selectbox("Processor", ["Hairul Izwan Mokhti", "Norwana Adnan", "Ainur Nashiha", "Hanis Fudhail"])
 processing_date = st.date_input("Processing Date", datetime(2024, 7, 12))
+leave_option = st.selectbox("Leave Option", ["Clear leave during notice", "Extend last working day"])
 
 if st.button("Calculate"):
     notice_accepted_date = datetime.strptime(str(notice_accepted_date), "%Y-%m-%d")
@@ -105,13 +106,18 @@ if st.button("Calculate"):
         unserved_notice_days_remaining = unserved_notice_days - unserved_notice_days_covered_by_leave
         unused_leave_balance = unused_leave_days - unserved_notice_days_covered_by_leave
 
-        if unserved_notice_days_remaining > 0:
-            final_employment_date = last_physical_working_day
-            last_payroll_date = last_physical_working_day
-            unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
-            if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
-                unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
-            unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
+        if leave_option == "Clear leave during notice":
+            leave_used_to_extend = 0
+            if unserved_notice_days_remaining > 0:
+                final_employment_date = last_physical_working_day
+                last_payroll_date = last_physical_working_day
+                unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
+                if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
+                    unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
+                unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
+            else:
+                final_employment_date = official_last_working_day
+                last_payroll_date = final_employment_date
         else:
             if unused_leave_balance > 0:
                 leave_used_to_extend = unused_leave_balance
@@ -121,23 +127,6 @@ if st.button("Calculate"):
             else:
                 final_employment_date = official_last_working_day
             last_payroll_date = final_employment_date
-
-    elif resignation_type == "Job Abandonment":
-        unused_leave_days = 0
-        unserved_notice_days_remaining = (calculate_official_last_working_day(notice_accepted_date, notice_period) - notice_accepted_date).days
-        final_employment_date = last_physical_working_day
-        last_payroll_date = final_employment_date
-        unserved_notice_info = f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
-        leave_used_to_offset_short_notice = 0
-        leave_used_to_extend = 0
-
-    elif resignation_type == "Dismissal due to Misconduct":
-        unused_leave_days = 0
-        unserved_notice_days_remaining = 0
-        final_employment_date = last_physical_working_day
-        last_payroll_date = final_employment_date
-        leave_used_to_offset_short_notice = 0
-        leave_used_to_extend = 0
 
     email_template = f"""
 Subject: Resignation and Final Employment Details
@@ -188,7 +177,7 @@ Date Processed: {processing_date.strftime('%d/%m/%Y')}
 Checklist for HR Ops:
 - [ ] Prepare acceptance of resignation with last working date as per the final date.
 - [ ] Clarify that no physical presence is required after {last_physical_working_day.strftime('%d/%m/%Y')}
-- [ ] Explain continuation of salary and benefits until {last_physical_working_day.strftime('%d/%m/%Y')}
+- [ ] Explain continuation of salary and benefits until {final_employment_date.strftime('%d/%m/%Y')}
 - [ ] Schedule handover of company property for {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Arrange for system access and door access termination on {last_physical_working_day.strftime('%d/%m/%Y')}
 - [ ] Conduct exit interview as per company policy
