@@ -8,8 +8,9 @@ def is_workday(date, off_days, public_holidays):
     return True
 
 # Function to calculate leave details
-def calculate_leave_details(start_date, notice_period_days, requested_last_day, leave_balance, off_days, public_holidays):
-    end_of_notice = start_date + timedelta(days=notice_period_days)
+def calculate_leave_details(start_date, notice_period_months, notice_period_days, requested_last_day, leave_balance, off_days, public_holidays):
+    notice_period_total_days = (notice_period_months * 30) + notice_period_days
+    end_of_notice = start_date + timedelta(days=notice_period_total_days)
     
     # Calculate served notice period
     served_notice_days = (requested_last_day - start_date).days + 1
@@ -69,7 +70,8 @@ st.title("Employee Resignation Calculator")
 
 # Input fields
 resignation_date = st.date_input("Resignation Date", datetime(2024, 7, 15))
-notice_period = st.number_input("Notice Period (days)", value=30)
+notice_period_months = st.number_input("Notice Period (months)", value=0)
+notice_period_days = st.number_input("Notice Period (days)", value=30)
 requested_last_day = st.date_input("Requested Last Working Day", datetime(2024, 7, 31))
 leave_balance = st.number_input("Leave Balance (days)", value=20)
 
@@ -82,7 +84,7 @@ if st.button("Calculate"):
     start_date = datetime.strptime(str(resignation_date), '%Y-%m-%d')
     requested_last_day_dt = datetime.strptime(str(requested_last_day), '%Y-%m-%d')
     
-    results = calculate_leave_details(start_date, notice_period, requested_last_day_dt, leave_balance, off_days, adjusted_public_holidays)
+    results = calculate_leave_details(start_date, notice_period_months, notice_period_days, requested_last_day_dt, leave_balance, off_days, adjusted_public_holidays)
     
     st.subheader("Results")
     st.write("Served Notice Days:", results["served_notice_days"])
