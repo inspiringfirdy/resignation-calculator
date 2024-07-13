@@ -79,7 +79,7 @@ try:
                 option_1_leave_dates.append(current_date)
             current_date -= timedelta(days=1)
         option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
-        last_physical_date_option_1 = option_1_leave_dates[-1] if option_1_leave_dates else None
+        last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else None
         last_payroll_date_option_1 = requested_last_working_day
 
         # Option 2: Extend the last working day starting from the next working day of the requested last working day
