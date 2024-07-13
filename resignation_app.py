@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 # Function to calculate the results
 def calculate_results(notice_received, notice_required, last_working_day_requested, leave_balance, employee_off_days):
@@ -7,7 +8,7 @@ def calculate_results(notice_received, notice_required, last_working_day_request
     last_working_day_requested_date = datetime.strptime(last_working_day_requested, "%d/%m/%Y")
 
     # Calculate official last day
-    official_last_day = notice_received_date.replace(month=notice_received_date.month + notice_required) - timedelta(days=1)
+    official_last_day = notice_received_date + relativedelta(months=notice_required) - timedelta(days=1)
 
     # Calculate notice served dates
     notice_served_start = notice_received_date
@@ -30,16 +31,19 @@ def calculate_results(notice_received, notice_required, last_working_day_request
     short_notice_days = max(0, total_days_unserved - leave_balance)
 
     # Determine the last physical and payroll dates based on options
-    if updated_leave_balance > 0:
-        last_physical_date_option1 = last_working_day_requested_date - timedelta(days=updated_leave_balance)
-        last_physical_date_option2 = last_working_day_requested_date
-        last_payroll_date_option1 = last_working_day_requested_date
-        last_payroll_date_option2 = official_last_day
+    if leave_used_to_offset_notice > 0:
+        last_physical_date_option1 = last_working_day_requested_date - timedelta(days=leave_used_to_offset_notice)
     else:
         last_physical_date_option1 = last_working_day_requested_date
-        last_physical_date_option2 = last_working_day_requested_date
+
+    last_physical_date_option2 = last_working_day_requested_date
+
+    if updated_leave_balance > 0:
         last_payroll_date_option1 = last_working_day_requested_date
-        last_payroll_date_option2 = official_last_day
+    else:
+        last_payroll_date_option1 = last_working_day_requested_date
+
+    last_payroll_date_option2 = official_last_day
 
     return {
         "Official Last Day": official_last_day.strftime("%d/%m/%Y"),
@@ -89,4 +93,3 @@ if st.button("Calculate"):
     st.write("This option is applicable when the employee does not utilize their leave days during the notice period. The last physical date remains the same as the last working day requested by the employee.")
     st.write("**Last Payroll Date Option 2 (13/08/2024):**")
     st.write("This option is applicable when the employee's last working day is extended to offset the leave balance. The payroll date is extended to the official last day calculated based on the notice period.")
-
