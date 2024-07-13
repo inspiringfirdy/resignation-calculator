@@ -17,14 +17,18 @@ def calculate_official_last_day(received_date, period_months):
 def calculate_days_served(start_date, end_date):
     return (end_date - start_date).days + 1
 
-def calculate_unserved_notice(start_date, end_date, off_days, rest_days, public_holidays):
+def calculate_unserved_notice(start_date, end_date):
+    return (end_date - start_date).days + 1
+
+def calculate_leave_dates(start_date, leave_balance, off_days, rest_days, public_holidays):
+    leave_dates = []
     current_date = start_date
-    unserved_days = []
-    while current_date <= end_date:
+    while leave_balance > 0:
         if current_date.weekday() not in off_days and current_date.weekday() not in rest_days and current_date not in public_holidays:
-            unserved_days.append(current_date)
+            leave_dates.append(current_date)
+            leave_balance -= 1
         current_date += timedelta(days=1)
-    return unserved_days
+    return leave_dates
 
 def adjust_holidays(holidays, off_days, rest_days):
     adjusted_holidays = []
@@ -75,8 +79,8 @@ try:
     full_notice_period_days = calculate_days_served(notice_received_date, official_last_day)
     unserved_notice_start = requested_last_working_day + timedelta(days=1)
     unserved_notice_end = official_last_day
-    unserved_notice_dates = calculate_unserved_notice(unserved_notice_start, unserved_notice_end, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
-    days_unserved = len(unserved_notice_dates)
+    unserved_notice_days = calculate_unserved_notice(unserved_notice_start, unserved_notice_end)
+    days_unserved = unserved_notice_days
 
     leave_used_to_offset_notice = min(leave_balance, days_unserved)
     updated_leave_balance = leave_balance - leave_used_to_offset_notice
@@ -89,13 +93,8 @@ try:
     option_1_leave_dates = []
     if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
-        current_date = requested_last_working_day
-        while len(option_1_leave_dates) < updated_leave_balance and current_date >= notice_served_start:
-            if current_date.weekday() not in {off_day_index, rest_day_index} and current_date not in adjusted_public_holidays:
-                option_1_leave_dates.append(current_date)
-            current_date -= timedelta(days=1)
-        option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
-        last_physical_date_option_1 = requested_last_working_day if leave_balance == 0 else (option_1_leave_dates[0] if option_1_leave_dates else requested_last_working_day)
+        option_1_leave_dates = calculate_leave_dates(requested_last_working_day + timedelta(days=1), leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
+        last_physical_date_option_1 = option_1_leave_dates[-1] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day
         last_payroll_date_option_1 = requested_last_working_day
     else:
         last_physical_date_option_1 = requested_last_working_day
@@ -104,13 +103,9 @@ try:
     option_2_extended_dates = []
     if leave_balance > 0:
         # Option 2: Extend the last working day starting from the next working day of the requested last working day
-        current_date = unserved_notice_start
-        while len(option_2_extended_dates) < updated_leave_balance:
-            if current_date.weekday() not in {off_day_index, rest_day_index} and current_date not in adjusted_public_holidays:
-                option_2_extended_dates.append(current_date)
-            current_date += timedelta(days=1)
+        option_2_extended_dates = calculate_leave_dates(unserved_notice_start, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
         last_physical_date_option_2 = requested_last_working_day
-        last_payroll_date_option_2 = option_2_extended_dates[-1] if option_2_extended_dates else None
+        last_payroll_date_option_2 = option_2_extended_dates[-1] if option_2_extended_dates else requested_last_working_day
     else:
         last_physical_date_option_2 = requested_last_working_day
         last_payroll_date_option_2 = requested_last_working_day
