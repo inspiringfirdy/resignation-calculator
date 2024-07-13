@@ -1,155 +1,59 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-# Function to adjust public holidays
-def adjust_public_holidays(public_holidays, rest_days):
-    adjusted_holidays = []
-    for holiday in public_holidays:
-        while holiday.weekday() in rest_days:
-            holiday += timedelta(days=1)
-        adjusted_holidays.append(holiday)
-    return adjusted_holidays
+def calculate_last_working_day(resignation_date, notice_period_days):
+    return resignation_date + timedelta(days=notice_period_days)
 
-# Function to calculate leave details
-def calculate_leave_details(start_of_leave, unused_leave_days, off_days_indexes, public_holidays):
-    end_of_leave = start_of_leave
-    while unused_leave_days > 0:
-        end_of_leave += timedelta(days=1)
-        if end_of_leave.weekday() not in off_days_indexes and end_of_leave not in public_holidays:
-            unused_leave_days -= 1
-    return end_of_leave
+def main():
+    st.title("Resignation Scenarios and Treatments")
 
-st.title("Employee Resignation Calculator")
+    scenarios = {
+        "Immediate Resignation": 0,
+        "Resignation with Full Notice": 30,
+        "Resignation During Probation": 7,
+        "Resignation for Immediate Health or Personal Reasons": 0,
+        "Resignation with Garden Leave": 30,
+        "Mutual Agreement": 0,
+        "Resignation with Outstanding Projects": 30,
+        "Resignation with Legal or Disciplinary Issues": 30
+    }
 
-resignation_type = st.selectbox("Resignation Type", ["Resignation with Notice", "Resignation without Notice", "Dismissal due to Misconduct"])
-employee_name = st.text_input("Employee Name", "John Doe")
-employee_id = st.text_input("Employee ID", "4200")
-notice_accepted_date = st.date_input("Notice Accepted Date", datetime.today())
-notice_period = st.selectbox("Notice Period", ["1 month", "2 weeks", "3 months", "Other"])
-unused_leave_days = st.number_input("Unused Leave Days", min_value=0, value=0, step=1)
-last_physical_working_day = st.date_input("Last Physical Working Day", datetime.today())
-off_days = st.multiselect("Rest Days and Off Days", ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], ["saturday", "sunday"])
-processor = st.text_input("Processor", "Hairul Izwan Mokhti")
-processing_date = st.date_input("Processing Date", datetime.today())
+    st.header("Determine Last Working Day Based on Resignation Scenario")
+    
+    scenario = st.selectbox("Select Resignation Scenario:", list(scenarios.keys()))
+    resignation_date = st.date_input("Resignation Date:", datetime.today())
 
-# Define public holidays
-public_holidays = [
-    datetime(2024, 1, 1), datetime(2024, 1, 25), datetime(2024, 2, 1),
-    datetime(2024, 2, 10), datetime(2024, 2, 11), datetime(2024, 2, 12),
-    datetime(2024, 3, 28), datetime(2024, 4, 10), datetime(2024, 4, 11),
-    datetime(2024, 5, 1), datetime(2024, 5, 22), datetime(2024, 6, 3),
-    datetime(2024, 6, 17), datetime(2024, 7, 7), datetime(2024, 7, 8),
-    datetime(2024, 8, 31), datetime(2024, 9, 16), datetime(2024, 9, 16),
-    datetime(2024, 10, 31), datetime(2024, 12, 25)
-]
+    if scenario == "Mutual Agreement":
+        custom_notice_period = st.number_input("Enter agreed notice period in days:", min_value=0)
+        notice_period_days = custom_notice_period
+    else:
+        notice_period_days = scenarios[scenario]
 
-# Map days to weekdays
-day_to_weekday = {
-    "monday": 0,
-    "tuesday": 1,
-    "wednesday": 2,
-    "thursday": 3,
-    "friday": 4,
-    "saturday": 5,
-    "sunday": 6
-}
+    last_working_day = calculate_last_working_day(resignation_date, notice_period_days)
 
-# Convert off days to weekday indices
-off_days_indexes = [day_to_weekday[day] for day in off_days]
+    st.subheader("Resignation Details")
+    st.write(f"Resignation Scenario: {scenario}")
+    st.write(f"Notice Period (days): {notice_period_days}")
+    st.write(f"Last Working Day: {last_working_day.strftime('%Y-%m-%d')}")
 
-# Adjust public holidays to consider rest days
-adjusted_public_holidays = adjust_public_holidays(public_holidays, off_days_indexes)
+    st.subheader("Steps for Handling Resignation")
+    steps = [
+        "Calculate the required notice period.",
+        "Determine if the employee will serve the full notice period or if leave will be used to offset the period.",
+        "Calculate the annual leave balance.",
+        "Determine if leave can be used to offset the notice period or if it will be forfeited.",
+        "Include salary up to the last working day.",
+        "Include payment in lieu of notice if applicable.",
+        "Include any unused annual leave if company policy allows.",
+        "Provide resignation acceptance letter detailing terms.",
+        "Ensure proper documentation of the last working day, leave balance, and final payment.",
+        "Ensure the employee completes the handover of responsibilities.",
+        "Ensure the return of company property.",
+        "Ensure all statutory contributions are made up to the official last working day.",
+        "Conduct an exit interview if applicable to gather feedback and ensure all administrative matters are settled."
+    ]
+    for step in steps:
+        st.write(f"- {step}")
 
-# Calculate official last working day
-if notice_period == "1 month":
-    notice_end_date = notice_accepted_date + timedelta(days=30)
-elif notice_period == "2 weeks":
-    notice_end_date = notice_accepted_date + timedelta(days=14)
-elif notice_period == "3 months":
-    notice_end_date = notice_accepted_date + timedelta(days=90)
-else:
-    notice_end_date = st.date_input("Specify Notice End Date")
-
-official_last_working_day = notice_end_date
-
-# Calculate the number of workdays during the notice period
-workdays_during_notice = 0
-current_date = notice_accepted_date
-while current_date <= last_physical_working_day:
-    if current_date.weekday() not in off_days_indexes and current_date not in adjusted_public_holidays:
-        workdays_during_notice += 1
-    current_date += timedelta(days=1)
-
-# Calculate remaining leave days to extend last physical working day
-remaining_leave_days = unused_leave_days - workdays_during_notice
-if remaining_leave_days < 0:
-    remaining_leave_days = 0
-
-# Calculate the last physical working day with remaining leave days
-final_physical_working_day = calculate_leave_details(last_physical_working_day, remaining_leave_days, off_days_indexes, adjusted_public_holidays)
-
-# Calculate short notice to be paid
-short_notice_days = (official_last_working_day - final_physical_working_day).days
-
-# Calculate the last payroll date
-last_payroll_date = official_last_working_day
-
-# Display results
-st.markdown(f"**Official Last Working Day:** {official_last_working_day.strftime('%Y-%m-%d')}")
-st.markdown(f"**Last Payroll Date (Salary paid up to):** {last_payroll_date.strftime('%Y-%m-%d')}")
-st.markdown(f"**Short Notice to be Paid:** {short_notice_days} days")
-
-# Email template generation
-st.markdown("### Email Template")
-email_template = f"""
-**Subject:** Resignation and Final Employment Details
-
-**Dear {employee_name},**
-
-This email is to confirm the details of your resignation and the final calculations for your last working day, leave balance, and payroll.
-
-**Employee Name:** {employee_name}  
-**Employee ID:** {employee_id}
-
-**Resignation Details:**
-- Resignation Type: {resignation_type}
-- Notice Accepted Date: {notice_accepted_date.strftime('%Y/%m/%d')}
-- Notice Required as per Employment Contract: {notice_period}
-- Official Last Working Day: {official_last_working_day.strftime('%Y/%m/%d')}
-- Last Working Day Requested: {last_physical_working_day.strftime('%Y/%m/%d')}
-
-**Leave and Payroll Details:**
-- Leave Balance: {unused_leave_days} days
-- Number of Leave Days Used to Offset Short Notice: {workdays_during_notice}
-- Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {workdays_during_notice}
-- Number of Leave Days Used to Extend the Last Physical Working Date: {remaining_leave_days}
-- Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%Y/%m/%d')}
-- **Short Notice to be Paid:** {short_notice_days} days
-
-You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
-
-**Checklist for Resigning Staff:**
-- Schedule handover of company property for {last_physical_working_day.strftime('%Y/%m/%d')}
-- Return all company property including access cards, keys, and devices
-- Ensure all work documents are handed over to the relevant department
-- Complete the exit interview as per company policy
-- Provide forwarding contact information and address for future correspondence
-- Any other questions or clarifications can be sent to hr@telecontinent.com.my
-
-Please let us know if you have any questions or need further clarification.
-
-**Best regards,**
-
-Hairul Izwan Mokhti  
-Date Processed: {processing_date.strftime('%Y/%m/%d')}
-
-**Checklist for HR Ops:**
-- Prepare acceptance of resignation with last working date as per the final date.
-- Clarify that no physical presence is required after {last_physical_working_day.strftime('%Y/%m/%d')}
-- Explain continuation of salary and benefits until {last_payroll_date.strftime('%Y/%m/%d')}
-- Schedule handover of company property for {last_physical_working_day.strftime('%Y/%m/%d')}
-- Arrange for system access and door access termination on {last_physical_working_day.strftime('%Y/%m/%d')}
-- Conduct exit interview as per company policy
-"""
-
-st.text_area("Generated Email Template", email_template)
+if __name__ == "__main__":
+    main()
