@@ -103,8 +103,8 @@ try:
     option_1_leave_dates = []
     if leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
-        option_1_leave_dates = calculate_leave_dates_backward(requested_last_working_day - timedelta(days=1), leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
-        last_physical_date_option_1 = requested_last_working_day - timedelta(days=len(option_1_leave_dates) + 1)
+        option_1_leave_dates = calculate_leave_dates_backward(official_last_day, leave_balance, {off_day_index}, {rest_day_index}, adjusted_public_holidays)
+        last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else requested_last_working_day
         last_payroll_date_option_1 = requested_last_working_day
     else:
         last_physical_date_option_1 = requested_last_working_day
