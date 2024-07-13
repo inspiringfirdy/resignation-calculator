@@ -96,7 +96,7 @@ employee_name = st.text_input("Employee Name", "John Doe")
 employee_id = st.text_input("Employee ID", "4200")
 notice_accepted_date = st.date_input("Notice Accepted Date", datetime(2024, 7, 12))
 notice_period = st.text_input("Notice Period", "1 month")
-unused_leave_days = st.number_input("Unused Leave Days", 0, 100, 20)
+unused_leave_days = st.number_input("Unused Leave Days", 0, 100, 50)
 last_physical_working_day = st.date_input("Last Physical Working Day", datetime(2024, 7, 25))
 off_days = st.text_input("Off Days", "saturday, sunday")
 processor = st.selectbox("Processor", ["Hairul Izwan Mokhti", "Norwana Adnan", "Ainur Nashiha", "Hanis Fudhail"])
@@ -160,7 +160,7 @@ Resignation Details:
 Leave and Payroll Details:
 - LEAVE BALANCE:
 - Number of Leave Days Used to Offset Short Notice: {leave_used_to_offset_short_notice}
-{f"- Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_to_clear_during_notice}" if leave_to_clear_during_notice > 0 else ""}
+- Number of Leave Days Used to be Cleared During Workdays Throughout Notice Period: {leave_to_clear_during_notice}
 {f"- Number of Leave Days Used to Extend the Last PHYSICAL Working Date: {leave_used_to_extend}" if leave_used_to_extend > 0 else ""}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
 {unserved_notice_info}
