@@ -1,12 +1,12 @@
-import streamlit as st
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import streamlit as st
 
 # Define public holidays for Kuala Lumpur in 2024
 public_holidays = [
     "01/01/2024", "22/01/2024", "23/01/2024", "01/02/2024", "08/02/2024", "29/03/2024",
     "19/04/2024", "01/05/2024", "20/05/2024", "06/06/2024", "22/08/2024", "31/08/2024",
-    "16/09/2024", "14/10/2024", "11/11/2024", "25/12/2024"  # Add more public holidays if needed
+    "16/09/2024", "14/10/2024", "11/11/2024", "25/12/2024"
 ]
 public_holidays = [datetime.strptime(date, "%d/%m/%Y") for date in public_holidays]
 
@@ -21,12 +21,13 @@ day_to_weekday = {
     "sunday": 6
 }
 
+# Function to calculate official last working day
 def calculate_official_last_working_day(notice_accepted_date, notice_period_str):
     period_value, period_type = notice_period_str.split()
     period_value = int(period_value)
 
     if period_type.lower() in ["day", "days"]:
-        official_last_working_day = notice_accepted_date + timedelta(days=period_value) - timedelta(days=1)
+        official_last_working_day = notice_accepted_date + timedelta(days=period_value)
     elif period_type.lower() in ["month", "months"]:
         official_last_working_day = notice_accepted_date + relativedelta(months=period_value) - timedelta(days=1)
     else:
@@ -34,6 +35,7 @@ def calculate_official_last_working_day(notice_accepted_date, notice_period_str)
 
     return official_last_working_day
 
+# Function to adjust public holidays for rest days
 def adjust_public_holidays_for_rest_days(public_holidays, off_days, rest_days):
     adjusted_holidays = []
     for holiday in public_holidays:
@@ -43,6 +45,7 @@ def adjust_public_holidays_for_rest_days(public_holidays, off_days, rest_days):
         adjusted_holidays.append(holiday)
     return adjusted_holidays
 
+# Function to calculate leave details
 def calculate_leave_details(start_of_leave, unused_leave_days, off_days, public_holidays):
     end_of_leave = start_of_leave
     working_days = 0
@@ -60,12 +63,30 @@ def calculate_leave_details(start_of_leave, unused_leave_days, off_days, public_
         "Total Working Days on Leave": working_days
     }
 
+# Function to calculate unserved notice days
 def calculate_unserved_notice_days(notice_accepted_date, official_last_working_day, last_physical_working_day):
     notice_days_served = (last_physical_working_day - notice_accepted_date).days
     total_notice_days = (official_last_working_day - notice_accepted_date).days
 
     unserved_notice_days = total_notice_days - notice_days_served
     return unserved_notice_days
+
+# Function to break down unserved notice days by month
+def breakdown_unserved_notice_by_month(unserved_notice_days, last_physical_working_day, official_last_working_day):
+    breakdown = []
+    current_date = last_physical_working_day + timedelta(days=1)
+    remaining_days = unserved_notice_days
+
+    while remaining_days > 0:
+        next_month = current_date.replace(day=28) + timedelta(days=4)
+        days_in_month = (next_month - timedelta(days=next_month.day)).day
+        days_remaining_in_month = min(days_in_month - current_date.day + 1, remaining_days)
+
+        breakdown.append(f"{current_date.strftime('%B')} - {days_remaining_in_month} days")
+        remaining_days -= days_remaining_in_month
+        current_date = (current_date + timedelta(days=days_remaining_in_month)).replace(day=1)
+
+    return breakdown
 
 # Streamlit app
 st.title("Employee Resignation Calculator")
@@ -75,60 +96,55 @@ employee_name = st.text_input("Employee Name", "John Doe")
 employee_id = st.text_input("Employee ID", "4200")
 notice_accepted_date = st.date_input("Notice Accepted Date", datetime(2024, 7, 12))
 notice_period = st.text_input("Notice Period", "1 month")
-unused_leave_days = st.number_input("Unused Leave Days (Annual Leave and Replacement Leave)", min_value=0, value=10)
+unused_leave_days = st.number_input("Unused Leave Days", 0, 100, 20)
 last_physical_working_day = st.date_input("Last Physical Working Day", datetime(2024, 7, 25))
 off_days = st.text_input("Off Days", "saturday, sunday")
 processor = st.selectbox("Processor", ["Hairul Izwan Mokhti", "Norwana Adnan", "Ainur Nashiha", "Hanis Fudhail"])
 processing_date = st.date_input("Processing Date", datetime(2024, 7, 12))
-leave_option = st.selectbox("Leave Option", ["Clear leave during notice", "Extend last working day"])
+leave_option = st.selectbox("Leave Option (Chosen by Employee)", ["Clear during notice period", "Extend last working day"])
 
-if st.button("Calculate"):
-    notice_accepted_date = datetime.strptime(str(notice_accepted_date), "%Y-%m-%d")
-    last_physical_working_day = datetime.strptime(str(last_physical_working_day), "%Y-%m-%d")
-    off_days_list = [day_to_weekday[day.strip().lower()] for day in off_days.split(",")]
+# Convert input to correct types
+notice_accepted_date = datetime.strptime(str(notice_accepted_date), "%Y-%m-%d")
+last_physical_working_day = datetime.strptime(str(last_physical_working_day), "%Y-%m-%d")
+off_days_list = [day_to_weekday[day.strip().lower()] for day in off_days.split(",")]
 
-    rest_days = [5, 6]  # Assuming rest days are Saturday (5) and Sunday (6)
-    adjusted_public_holidays = adjust_public_holidays_for_rest_days(public_holidays, off_days_list, rest_days)
+rest_days = [5, 6]  # Assuming rest days are Saturday (5) and Sunday (6)
+adjusted_public_holidays = adjust_public_holidays_for_rest_days(public_holidays, off_days_list, rest_days)
 
-    official_last_working_day = None
-    final_employment_date = None
-    last_payroll_date = None
-    unserved_notice_info = ""
-    leave_used_to_offset_short_notice = 0
+if resignation_type == "Resignation with Notice":
+    # Perform calculations
+    official_last_working_day = calculate_official_last_working_day(notice_accepted_date, notice_period)
+    unserved_notice_days = calculate_unserved_notice_days(notice_accepted_date, official_last_working_day, last_physical_working_day)
+
+    unserved_notice_days_covered_by_leave = min(unserved_notice_days, unused_leave_days)
+    unserved_notice_days_remaining = unserved_notice_days - unserved_notice_days_covered_by_leave
+    unused_leave_balance = unused_leave_days - unserved_notice_days_covered_by_leave
     leave_used_to_extend = 0
-    unused_leave_balance = 0
+    leave_to_clear_during_notice = 0
 
-    if resignation_type == "Resignation with Notice":
-        official_last_working_day = calculate_official_last_working_day(notice_accepted_date, notice_period)
-        unserved_notice_days = calculate_unserved_notice_days(notice_accepted_date, official_last_working_day, last_physical_working_day)
+    if unserved_notice_days_remaining > 0:
+        final_employment_date = last_physical_working_day
+    else:
+        remaining_leave_days = unused_leave_days - unserved_notice_days_covered_by_leave
+        if leave_option == "Clear during notice period":
+            leave_to_clear_during_notice = remaining_leave_days
+            final_employment_date = last_physical_working_day - timedelta(days=remaining_leave_days)
+        elif leave_option == "Extend last working day":
+            leave_details = calculate_leave_details(last_physical_working_day + timedelta(days=1), remaining_leave_days, off_days_list, adjusted_public_holidays)
+            final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
+            leave_used_to_extend = remaining_leave_days
 
-        unserved_notice_days_covered_by_leave = min(unserved_notice_days, unused_leave_days)
-        unserved_notice_days_remaining = unserved_notice_days - unserved_notice_days_covered_by_leave
-        unused_leave_balance = unused_leave_days - unserved_notice_days_covered_by_leave
+    last_payroll_date = final_employment_date
+    leave_used_to_offset_short_notice = unserved_notice_days_covered_by_leave
 
-        if unserved_notice_days_remaining > 0:
-            final_employment_date = last_physical_working_day
-            last_payroll_date = last_physical_working_day
-            unserved_notice_info = f"July: {min(unserved_notice_days_remaining, 31 - last_physical_working_day.day)} days\n"
-            if unserved_notice_days_remaining > 31 - last_physical_working_day.day:
-                unserved_notice_info += f"August: {unserved_notice_days_remaining - (31 - last_physical_working_day.day)} days\n"
-            unserved_notice_info += f"Total: {unserved_notice_days_remaining} days, to be recovered from the final wages."
-        else:
-            if leave_option == "Clear leave during notice":
-                leave_used_to_extend = 0
-                remaining_leave_days = unused_leave_balance
-                leave_details = calculate_leave_details(last_physical_working_day + timedelta(days=1), remaining_leave_days, off_days_list, adjusted_public_holidays)
-                final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
-                last_payroll_date = final_employment_date
-            else:
-                if unused_leave_balance > 0:
-                    leave_used_to_extend = unused_leave_balance
-                    unused_leave_balance = 0  # All leave is used, no encashment
-                    leave_details = calculate_leave_details(official_last_working_day + timedelta(days=1), leave_used_to_extend, off_days_list, adjusted_public_holidays)
-                    final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
-                else:
-                    final_employment_date = official_last_working_day
-                last_payroll_date = final_employment_date
+# Crafting email template
+if resignation_type == "Resignation with Notice":
+    if unserved_notice_days_remaining > 0:
+        breakdown = breakdown_unserved_notice_by_month(unserved_notice_days_remaining, last_physical_working_day, official_last_working_day)
+        breakdown_str = "\n".join(breakdown)
+        unserved_notice_info = f"- Unserved Notice Period (Days):\n{breakdown_str}\nTotal: {unserved_notice_days_remaining} days, to be recovered from the final wages."
+    else:
+        unserved_notice_info = ""
 
     email_template = f"""
 Subject: Resignation and Final Employment Details
@@ -143,15 +159,16 @@ Employee ID: {employee_id}
 Resignation Details:
 - Resignation Type: {resignation_type}
 - Notice Accepted Date: {notice_accepted_date.strftime('%d/%m/%Y')}
-- Official Last Working Day: {official_last_working_day.strftime('%d/%m/%Y') if official_last_working_day else 'N/A'}
+- Official Last Working Day: {official_last_working_day.strftime('%d/%m/%Y')}
 - Last Physical Working Day: {last_physical_working_day.strftime('%d/%m/%Y')}
 
 Leave and Payroll Details:
-- Number of Leave Days Used to Offset Short Notice: {unserved_notice_days_covered_by_leave}
-- Number of Leave to be cleared during notice period: {unused_leave_balance if leave_option == "Clear leave during notice" else 0}
+- Number of Leave Days Used to Offset Short Notice: {leave_used_to_offset_short_notice}
+- Number of Leave Days Used to Clear Leave Balance During Notice Period: {leave_to_clear_during_notice}
+- Number of Leave Days Used to Extend Last Working Date: {leave_used_to_extend}
 - Final Employment Date (Adjusted Last Working Day): {final_employment_date.strftime('%d/%m/%Y')}
 - Last Payroll Date (Salary paid up to): {last_payroll_date.strftime('%d/%m/%Y')}
-- Unserved Notice Period (Days): {"0.00, the short notice is covered by the leave balance" if unserved_notice_days_remaining == 0 else f"{unserved_notice_info}"}
+{unserved_notice_info}
 
 You are required to ensure the clearances/actions below are fulfilled to ensure a smooth process:
 
@@ -171,10 +188,10 @@ Best regards,
 Date Processed: {processing_date.strftime('%d/%m/%Y')}
 """
 
-    st.subheader("Email Template")
-    st.text_area("Generated Email Template", email_template, height=200)
+st.markdown(email_template)
 
-    hr_ops_checklist = f"""
+# Checklist for HR Ops
+hr_ops_checklist = f"""
 Checklist for HR Ops:
 - [ ] Prepare acceptance of resignation with last working date as per the final date.
 - [ ] Clarify that no physical presence is required after {last_physical_working_day.strftime('%d/%m/%Y')}
@@ -184,5 +201,4 @@ Checklist for HR Ops:
 - [ ] Conduct exit interview as per company policy
 """
 
-    st.subheader("Checklist for HR Ops")
-    st.text_area("Generated HR Ops Checklist", hr_ops_checklist, height=200)
+st.markdown(hr_ops_checklist)
