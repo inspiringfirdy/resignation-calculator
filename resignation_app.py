@@ -26,6 +26,18 @@ def calculate_unserved_notice(start_date, end_date, off_days, rest_days, public_
         current_date += timedelta(days=1)
     return unserved_days
 
+def adjust_holidays(holidays, off_days, rest_days):
+    adjusted_holidays = []
+    for holiday in holidays:
+        if holiday.weekday() in off_days or holiday.weekday() in rest_days:
+            next_working_day = holiday + timedelta(days=1)
+            while next_working_day.weekday() in off_days or next_working_day.weekday() in rest_days or next_working_day in holidays:
+                next_working_day += timedelta(days=1)
+            adjusted_holidays.append(next_working_day)
+        else:
+            adjusted_holidays.append(holiday)
+    return adjusted_holidays
+
 # Input parameters from the user
 notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 15))
 notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
@@ -83,7 +95,7 @@ try:
         last_physical_date_option_1 = option_1_leave_dates[0] - timedelta(days=1) if option_1_leave_dates else None
         last_payroll_date_option_1 = requested_last_working_day
     else:
-        last_physical_date_option_1 = None
+        last_physical_date_option_1 = requested_last_working_day - timedelta(days=1)
         last_payroll_date_option_1 = requested_last_working_day
 
     option_2_extended_dates = []
