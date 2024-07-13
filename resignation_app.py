@@ -1,13 +1,14 @@
+import streamlit as st
 from datetime import datetime, timedelta
 import calendar
 import pandas as pd
 
-# Define the input parameters
-notice_received_date = datetime.strptime("15/07/2024", "%d/%m/%Y")
-notice_period_months = 1
-requested_last_working_day = datetime.strptime("02/08/2024", "%d/%m/%Y")
-leave_balance = 20
-off_days = ["Saturday", "Sunday"]
+# Input parameters
+notice_received_date = st.date_input("Date of Manager Acknowledgement", datetime(2024, 7, 15))
+notice_period_months = st.number_input("Notice Period (Months)", value=1, min_value=0)
+requested_last_working_day = st.date_input("Requested Last Working Day", datetime(2024, 8, 2))
+leave_balance = st.number_input("Leave Balance (Days)", value=20, min_value=0)
+off_days = st.multiselect("Employee Off & Rest Days", ["Saturday", "Sunday"], default=["Saturday", "Sunday"])
 
 # Public holidays for Kuala Lumpur in 2024 (example dates)
 public_holidays = [
@@ -93,8 +94,5 @@ if updated_leave_balance > 0:
     })
 
 # Display results using pandas DataFrame
-results_df = pd.DataFrame.from_dict(results, orient='index', columns=['Value'])
-results_df.index.name = 'Item'
-results_df.reset_index(inplace=True)
-
-import ace_tools as tools; tools.display_dataframe_to_user(name="Notice and Leave Calculations", dataframe=results_df)
+results_df = pd.DataFrame(list(results.items()), columns=["Item", "Value"])
+st.dataframe(results_df)
