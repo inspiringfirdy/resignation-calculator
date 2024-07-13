@@ -33,12 +33,17 @@ def calculate_last_working_day(resignation_date, notice_period_months, requested
     # Calculate the company-required notice period in days
     company_notice_period_days = notice_period_months * 30  # assuming 30 days in a month
 
+    # Calculate the official last working day based on the company's required notice period
+    official_last_working_day = resignation_date + timedelta(days=company_notice_period_days)
+    while official_last_working_day.weekday() >= 5 or is_public_holiday(official_last_working_day):
+        official_last_working_day += timedelta(days=1)
+
     # Calculate the actual notice period given by the employee
     actual_notice_period_days = (requested_last_working_day - resignation_date).days
 
     # Determine if the notice period is short
-    notice_short = actual_notice_period_days < company_notice_period_days
-    short_days = max(0, company_notice_period_days - actual_notice_period_days)
+    notice_short = requested_last_working_day < official_last_working_day
+    short_days = (official_last_working_day - requested_last_working_day).days if notice_short else 0
 
     # Calculate leave days used to offset the notice period
     leave_days_used = min(short_days, leave_balance)
@@ -52,7 +57,8 @@ def calculate_last_working_day(resignation_date, notice_period_months, requested
             adjusted_last_working_day += timedelta(days=1)
 
     return {
-        'original_last_working_day': requested_last_working_day,
+        'official_last_working_day': official_last_working_day,
+        'requested_last_working_day': requested_last_working_day,
         'adjusted_last_working_day': adjusted_last_working_day,
         'notice_short': notice_short,
         'short_days': short_days,
@@ -82,7 +88,8 @@ if st.button('Calculate'):
         leave_balance
     )
 
-    st.write(f"**Original Last Working Day**: {result['original_last_working_day'].strftime('%Y-%m-%d')}")
+    st.write(f"**Official Last Working Day**: {result['official_last_working_day'].strftime('%Y-%m-%d')}")
+    st.write(f"**Requested Last Working Day**: {result['requested_last_working_day'].strftime('%Y-%m-%d')}")
     st.write(f"**Adjusted Last Working Day**: {result['adjusted_last_working_day'].strftime('%Y-%m-%d')}")
     st.write(f"**Notice Period Sufficient**: {'No' if result['notice_short'] else 'Yes'}")
     if result['notice_short']:
