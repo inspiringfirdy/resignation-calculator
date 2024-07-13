@@ -1,95 +1,65 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 
-# Function to calculate the results
-def calculate_results(notice_received, notice_required, last_working_day_requested, leave_balance, employee_off_days):
-    notice_received_date = datetime.strptime(notice_received, "%d/%m/%Y")
-    last_working_day_requested_date = datetime.strptime(last_working_day_requested, "%d/%m/%Y")
+# Function to calculate the official last day
+def calculate_official_last_day(notice_received_date, notice_required_months):
+    official_last_day = notice_received_date + timedelta(days=30*notice_required_months) - timedelta(days=1)
+    return official_last_day
 
-    # Calculate official last day
-    official_last_day = notice_received_date + relativedelta(months=notice_required) - timedelta(days=1)
+# Function to calculate total number of days served
+def calculate_days_served(notice_served_start_date, notice_served_end_date):
+    return (notice_served_end_date - notice_served_start_date).days + 1
 
-    # Calculate notice served dates
-    notice_served_start = notice_received_date
-    notice_served_end = last_working_day_requested_date
-    total_days_served = (notice_served_end - notice_served_start).days + 1
+# Function to calculate unserved notice days
+def calculate_unserved_notice_days(last_working_day, official_last_day):
+    return (official_last_day - last_working_day).days
 
-    # Calculate full notice period
-    full_notice_period = (official_last_day - notice_received_date).days + 1
+# Streamlit app
+st.title("Leave and Notice Period Calculation App")
 
-    # Calculate unserved notice period
-    unserved_notice_start = last_working_day_requested_date + timedelta(days=1)
-    unserved_notice_end = official_last_day
-    total_days_unserved = (unserved_notice_end - unserved_notice_start).days + 1
+# Input fields
+notice_received_date = st.date_input("Notice Received Date", datetime(2024, 7, 15))
+notice_required_months = st.number_input("Notice Required (Months)", min_value=1, max_value=12, value=1)
+last_working_day = st.date_input("Last Working Day Requested", datetime(2024, 8, 2))
+leave_balance = st.number_input("Leave Balance (Days)", min_value=0, value=20)
+off_rest_days = st.text_input("Employee Off & Rest Days", "Saturday & Sunday")
 
-    # Calculate leave used to offset notice
-    leave_used_to_offset_notice = min(total_days_unserved, leave_balance)
+# Calculate results
+official_last_day = calculate_official_last_day(notice_received_date, notice_required_months)
+notice_served_start_date = notice_received_date
+notice_served_end_date = last_working_day
+total_days_served = calculate_days_served(notice_served_start_date, notice_served_end_date)
+full_notice_period_days = 30 * notice_required_months
+unserved_notice_days = calculate_unserved_notice_days(last_working_day, official_last_day)
+leave_used_to_offset_notice = min(leave_balance, unserved_notice_days)
+updated_leave_balance = leave_balance - leave_used_to_offset_notice
+short_notice_days = max(0, unserved_notice_days - leave_used_to_offset_notice)
 
-    # Calculate updated leave balance or short notice
-    updated_leave_balance = leave_balance - leave_used_to_offset_notice
-    short_notice_days = max(0, total_days_unserved - leave_balance)
+# Display results
+st.subheader("Results")
+st.write(f"Official Last Day: {official_last_day.strftime('%d/%m/%Y')}")
+st.write(f"Notice Served (Date): {notice_served_start_date.strftime('%d/%m/%Y')} - {notice_served_end_date.strftime('%d/%m/%Y')}")
+st.write(f"Total Number of Days Served: {total_days_served} days")
+st.write(f"Full Notice Period (Days): {full_notice_period_days} days")
+st.write(f"Unserved Notice (Date): {last_working_day + timedelta(days=1)} - {official_last_day}")
+st.write(f"Total Number of Days Unserved: {unserved_notice_days} days")
+st.write(f"Total Leave Balance: {leave_balance} days")
+st.write(f"Leave Used to Offset Notice: {leave_used_to_offset_notice} days")
+st.write(f"Updated Leave Balance: {updated_leave_balance} days")
+st.write(f"Short Notice Days (to be recovered through final pay): {short_notice_days} days")
 
-    # Determine the last physical and payroll dates based on options
-    if leave_used_to_offset_notice > 0:
-        last_physical_date_option1 = last_working_day_requested_date - timedelta(days=leave_used_to_offset_notice)
+# Options if there is leave balance
+if updated_leave_balance > 0:
+    st.subheader("Options")
+    option = st.radio("Choose an option:", ("Option 1: Clear leave during notice period", "Option 2: Extend last working day"))
+
+    if option == "Option 1: Clear leave during notice period":
+        st.write(f"Leave to clear on {notice_served_start_date + timedelta(days=total_days_served)} to {last_working_day}")
+        st.write(f"Last Physical Date: {notice_served_start_date + timedelta(days=total_days_served - 1)}")
+        st.write(f"Last Payroll Date: {last_working_day}")
     else:
-        last_physical_date_option1 = last_working_day_requested_date
+        st.write(f"Extend the last working day from {last_working_day + timedelta(days=1)} for {updated_leave_balance} days")
+        st.write(f"Last Physical Date: {official_last_day}")
+        st.write(f"Last Payroll Date: {official_last_day}")
 
-    last_physical_date_option2 = last_working_day_requested_date
-
-    if updated_leave_balance > 0:
-        last_payroll_date_option1 = last_working_day_requested_date
-    else:
-        last_payroll_date_option1 = last_working_day_requested_date
-
-    last_payroll_date_option2 = official_last_day
-
-    return {
-        "Official Last Day": official_last_day.strftime("%d/%m/%Y"),
-        "Notice Served Dates": f"{notice_served_start.strftime('%d/%m/%Y')} - {notice_served_end.strftime('%d/%m/%Y')}",
-        "Total Days Served": total_days_served,
-        "Full Notice Period": full_notice_period,
-        "Unserved Notice Dates": f"{unserved_notice_start.strftime('%d/%m/%Y')} - {unserved_notice_end.strftime('%d/%m/%Y')}",
-        "Total Days Unserved": total_days_unserved,
-        "Leave Used to Offset Notice": leave_used_to_offset_notice,
-        "Updated Leave Balance": updated_leave_balance,
-        "Short Notice Days": short_notice_days,
-        "Last Physical Date Option 1": last_physical_date_option1.strftime("%d/%m/%Y"),
-        "Last Payroll Date Option 1": last_payroll_date_option1.strftime("%d/%m/%Y"),
-        "Last Physical Date Option 2": last_physical_date_option2.strftime("%d/%m/%Y"),
-        "Last Payroll Date Option 2": last_payroll_date_option2.strftime("%d/%m/%Y"),
-    }
-
-# Streamlit application
-st.title("Employee Resignation Calculator")
-
-notice_received = st.date_input("Notice Received Date", value=datetime(2024, 7, 15))
-notice_required = st.number_input("Notice Required (months)", min_value=1, value=1)
-last_working_day_requested = st.date_input("Last Working Day Requested", value=datetime(2024, 8, 2))
-leave_balance = st.number_input("Leave Balance (days)", min_value=0, value=20)
-employee_off_days = st.text_input("Employee Off & Rest Days", value="Saturday & Sunday")
-
-if st.button("Calculate"):
-    results = calculate_results(
-        notice_received.strftime("%d/%m/%Y"),
-        notice_required,
-        last_working_day_requested.strftime("%d/%m/%Y"),
-        leave_balance,
-        employee_off_days
-    )
-    
-    for key, value in results.items():
-        st.write(f"{key}: {value}")
-
-    st.write("**Option 1 Scenarios:**")
-    st.write("**Last Physical Date Option 1 (24/07/2024):**")
-    st.write("This option is applicable when the employee decides to clear their leave balance during the notice period. The last physical date would be adjusted to reflect the remaining leave days that the employee needs to utilize before their last working day.")
-    st.write("**Last Payroll Date Option 1 (02/08/2024):**")
-    st.write("This option is applicable in conjunction with the last physical date option 1. The payroll date remains the same as the last working day requested by the employee since the leave days are cleared within the notice period.")
-
-    st.write("**Option 2 Scenarios:**")
-    st.write("**Last Physical Date Option 2 (02/08/2024):**")
-    st.write("This option is applicable when the employee does not utilize their leave days during the notice period. The last physical date remains the same as the last working day requested by the employee.")
-    st.write("**Last Payroll Date Option 2 (13/08/2024):**")
-    st.write("This option is applicable when the employee's last working day is extended to offset the leave balance. The payroll date is extended to the official last day calculated based on the notice period.")
+# Run the app with: streamlit run leave_calculation_app.py
