@@ -25,13 +25,19 @@ def adjust_for_public_holidays(holidays):
 public_holidays_set = adjust_for_public_holidays(public_holidays)
 
 # Function to calculate last working day and payroll details
-def calculate_last_day_and_payroll(notice_date, notice_period, basic_salary, total_leave_balance, leave_utilized_during_notice, workdays_per_month=26, calendar_days_in_month=31):
+def calculate_last_day_and_payroll(notice_date, notice_period, basic_salary, total_leave_balance):
+    # Assume full leave utilization during notice period
+    leave_utilized_during_notice = 23  # Assuming 23 working days in the notice period
+    workdays_per_month = 26
+    calendar_days_in_month_june = 30
+    calendar_days_in_month_july = 31
+
     # Calculate remaining leave balance
     remaining_leave_balance = total_leave_balance - leave_utilized_during_notice
 
     # Calculate daily rates
     daily_rate_encashment = basic_salary / workdays_per_month
-    daily_rate_pro_rated = basic_salary / calendar_days_in_month
+    daily_rate_pro_rated = basic_salary / calendar_days_in_month_july
 
     # Calculate leave encashment amount
     leave_encashment_amount = daily_rate_encashment * remaining_leave_balance
@@ -79,10 +85,6 @@ notice_date = st.date_input('Notice Date', datetime(2024, 5, 31))
 notice_period = st.number_input('Notice Period (months)', 1, format='%d')
 basic_salary = st.number_input('Basic Salary (RM)', 3161.09, format='%.2f')
 total_leave_balance = st.number_input('Total Leave Balance (days)', 30.50, format='%.2f')
-leave_utilized_during_notice = st.number_input('Leave Utilized During Notice Period (days)', 23, format='%.2f')
-workdays_per_month = st.number_input('Workdays Per Month', 26, format='%d')
-calendar_days_in_month_june = st.number_input('Calendar Days in June', 30, format='%d')
-calendar_days_in_month_july = st.number_input('Calendar Days in July', 31, format='%d')
 
 # Calculate button
 if st.button('Calculate'):
@@ -90,10 +92,7 @@ if st.button('Calculate'):
         notice_date.strftime('%Y-%m-%d'),
         notice_period,
         basic_salary,
-        total_leave_balance,
-        leave_utilized_during_notice,
-        workdays_per_month,
-        calendar_days_in_month_july
+        total_leave_balance
     )
 
     st.write(f"**Original Last Working Day**: {result['original_last_working_day']}")
