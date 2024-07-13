@@ -13,13 +13,13 @@ public_holidays = [datetime.strptime(date, "%d/%m/%Y") for date in public_holida
 
 # Map days to their respective weekday numbers
 day_to_weekday = {
-    'sunday': 6,
     'monday': 0,
     'tuesday': 1,
     'wednesday': 2,
     'thursday': 3,
     'friday': 4,
-    'saturday': 5
+    'saturday': 5,
+    'sunday': 6
 }
 
 # Adjust public holidays if they fall on rest days
@@ -43,12 +43,12 @@ notice_accepted_date = st.date_input("Notice Accepted Date", datetime(2024, 7, 1
 notice_period = st.text_input("Notice Period", "1 month", key="notice_period")
 unused_leave_days = st.number_input("Unused Leave Days", min_value=0, value=50, key="unused_leave_days")
 last_physical_working_day = st.date_input("Last Physical Working Day", datetime(2024, 7, 25), key="last_physical_working_day")
-off_days = st.multiselect("Off Days", ['saturday', 'sunday'], default=['saturday', 'sunday'], key="off_days")
+rest_days_and_off_days = st.multiselect("Rest Days and Off Days", list(day_to_weekday.keys()), key="rest_days_and_off_days")
 processor = st.selectbox("Processor", ["Hairul Izwan Mokhti", "Norwana Adnan", "Ainur Nashiha", "Hanis Fudhail"], key="processor")
 processing_date = st.date_input("Processing Date", datetime.today(), key="processing_date")
 
 # Calculate adjusted public holidays considering rest days
-off_days_indexes = [day_to_weekday[day] for day in off_days]
+off_days_indexes = [day_to_weekday[day] for day in rest_days_and_off_days]
 adjusted_public_holidays = adjust_public_holidays(public_holidays, off_days_indexes)
 
 # Perform calculations based on input
