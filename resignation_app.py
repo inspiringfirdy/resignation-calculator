@@ -73,13 +73,14 @@ try:
     if updated_leave_balance > 0:
         # Option 1: Clear leave on working days during notice period excluding off days and public holidays
         option_1_leave_dates = []
-        current_date = notice_served_start
-        while len(option_1_leave_dates) < updated_leave_balance and current_date <= notice_served_end:
+        current_date = requested_last_working_day
+        while len(option_1_leave_dates) < updated_leave_balance and current_date >= notice_served_start:
             if current_date.weekday() < 5 and current_date not in public_holidays:  # Weekday and not a public holiday
                 option_1_leave_dates.append(current_date)
-            current_date += timedelta(days=1)
+            current_date -= timedelta(days=1)
+        option_1_leave_dates = option_1_leave_dates[::-1]  # Reverse to start from last working day backward
         last_physical_date_option_1 = option_1_leave_dates[-1] if option_1_leave_dates else None
-        last_payroll_date_option_1 = notice_served_end
+        last_payroll_date_option_1 = requested_last_working_day
 
         # Option 2: Extend the last working day starting from the next working day of the requested last working day
         option_2_extended_dates = []
@@ -88,7 +89,7 @@ try:
             if current_date.weekday() < 5 and current_date not in public_holidays:  # Weekday and not a public holiday
                 option_2_extended_dates.append(current_date)
             current_date += timedelta(days=1)
-        last_physical_date_option_2 = notice_served_end
+        last_physical_date_option_2 = requested_last_working_day
         last_payroll_date_option_2 = option_2_extended_dates[-1] if option_2_extended_dates else None
 
         results.update({
