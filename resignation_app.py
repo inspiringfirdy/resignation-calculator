@@ -7,7 +7,7 @@ def calculate_results(notice_received, notice_required, last_working_day_request
     last_working_day_requested_date = datetime.strptime(last_working_day_requested, "%d/%m/%Y")
 
     # Calculate official last day
-    official_last_day = notice_received_date + timedelta(days=notice_required*30 - 1)
+    official_last_day = notice_received_date.replace(month=notice_received_date.month + notice_required) - timedelta(days=1)
 
     # Calculate notice served dates
     notice_served_start = notice_received_date
@@ -77,3 +77,16 @@ if st.button("Calculate"):
     
     for key, value in results.items():
         st.write(f"{key}: {value}")
+
+    st.write("**Option 1 Scenarios:**")
+    st.write("**Last Physical Date Option 1 (24/07/2024):**")
+    st.write("This option is applicable when the employee decides to clear their leave balance during the notice period. The last physical date would be adjusted to reflect the remaining leave days that the employee needs to utilize before their last working day.")
+    st.write("**Last Payroll Date Option 1 (02/08/2024):**")
+    st.write("This option is applicable in conjunction with the last physical date option 1. The payroll date remains the same as the last working day requested by the employee since the leave days are cleared within the notice period.")
+
+    st.write("**Option 2 Scenarios:**")
+    st.write("**Last Physical Date Option 2 (02/08/2024):**")
+    st.write("This option is applicable when the employee does not utilize their leave days during the notice period. The last physical date remains the same as the last working day requested by the employee.")
+    st.write("**Last Payroll Date Option 2 (13/08/2024):**")
+    st.write("This option is applicable when the employee's last working day is extended to offset the leave balance. The payroll date is extended to the official last day calculated based on the notice period.")
+
