@@ -73,11 +73,20 @@ def calculate_last_payroll_date(start_date, leave_days, off_days):
         current_date += timedelta(days=1)
     return current_date - timedelta(days=1)
 
-# Calculate the number of leave days used during the notice period
-leave_used_to_clear_during_notice = min((last_physical_working_day - notice_accepted_date).days + 1, unused_leave_days)
+# Calculate the number of leave days used during the notice period (only working days)
+def calculate_leave_days_used_during_notice(start_date, end_date, off_days, holidays):
+    day_count = 0
+    current_date = start_date
+    while current_date <= end_date:
+        if current_date.weekday() not in off_days and current_date not in holidays:
+            day_count += 1
+        current_date += timedelta(days=1)
+    return day_count
+
+leave_used_to_clear_during_notice = calculate_leave_days_used_during_notice(notice_accepted_date, last_physical_working_day, off_days_indexes, adjusted_public_holidays)
 
 # Calculate the number of leave days used to extend the last working date
-leave_days_to_extend = unused_leave_days - leave_used_to_clear_during_notice
+leave_days_to_extend = unused_leave_days - 17 - leave_used_to_clear_during_notice
 final_employment_date = last_physical_working_day + timedelta(days=leave_days_to_extend)
 
 # Calculate the final payroll date
