@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import calendar
+import pandas as pd
 
 # Define the input parameters
 notice_received_date = datetime.strptime("15/07/2024", "%d/%m/%Y")
@@ -91,6 +92,9 @@ if updated_leave_balance > 0:
         "Last Payroll Date Option 2": last_payroll_date_option_2.strftime("%d/%m/%Y") if last_payroll_date_option_2 else None,
     })
 
-# Display results
-for key, value in results.items():
-    print(f"{key}: {value}")
+# Display results using pandas DataFrame
+results_df = pd.DataFrame.from_dict(results, orient='index', columns=['Value'])
+results_df.index.name = 'Item'
+results_df.reset_index(inplace=True)
+
+import ace_tools as tools; tools.display_dataframe_to_user(name="Notice and Leave Calculations", dataframe=results_df)
