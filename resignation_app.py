@@ -101,7 +101,6 @@ last_physical_working_day = st.date_input("Last Physical Working Day", datetime(
 off_days = st.text_input("Off Days", "saturday, sunday")
 processor = st.selectbox("Processor", ["Hairul Izwan Mokhti", "Norwana Adnan", "Ainur Nashiha", "Hanis Fudhail"])
 processing_date = st.date_input("Processing Date", datetime(2024, 7, 12))
-leave_option = st.selectbox("Leave Option (Chosen by Employee)", ["Clear during notice period", "Extend last working day"])
 
 # Convert input to correct types
 notice_accepted_date = datetime.strptime(str(notice_accepted_date), "%Y-%m-%d")
@@ -126,13 +125,8 @@ if resignation_type == "Resignation with Notice":
         final_employment_date = last_physical_working_day
     else:
         remaining_leave_days = unused_leave_days - unserved_notice_days_covered_by_leave
-        if leave_option == "Clear during notice period":
-            leave_to_clear_during_notice = remaining_leave_days
-            final_employment_date = last_physical_working_day - timedelta(days=remaining_leave_days)
-        elif leave_option == "Extend last working day":
-            leave_details = calculate_leave_details(last_physical_working_day + timedelta(days=1), remaining_leave_days, off_days_list, adjusted_public_holidays)
-            final_employment_date = datetime.strptime(leave_details["End of Leave"], "%d/%m/%Y")
-            leave_used_to_extend = remaining_leave_days
+        leave_to_clear_during_notice = remaining_leave_days
+        final_employment_date = last_physical_working_day - timedelta(days=remaining_leave_days)
 
     last_payroll_date = final_employment_date
     leave_used_to_offset_short_notice = unserved_notice_days_covered_by_leave
